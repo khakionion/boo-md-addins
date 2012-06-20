@@ -244,7 +244,6 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	protected def GetLineText(line as int):
 		line = Math.Max (0, line)
 		line = Math.Min (TextEditor.LineCount-1, line)
-		linetext = TextEditor.GetLineText (line)
 		return TextEditor.GetLineText(line) or string.Empty
 		
 	protected def GetText(begin as int, end as int):
