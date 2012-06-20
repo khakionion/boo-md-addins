@@ -242,7 +242,8 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	protected def GetLineText(line as int):
 		line = Math.Max (0, line)
 		line = Math.Min (TextEditor.LineCount-1, line)
-		return TextEditor.GetLineText(line)
+		linetext = TextEditor.GetLineText (line)
+		return TextEditor.GetLineText(line) or string.Empty
 		
 	protected def GetText(begin as int, end as int):
 		end = Math.Min (TextLength-1, end)
@@ -250,7 +251,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		
 		if (not end > begin):
 			return string.Empty
-		return TextEditor.GetTextBetween (begin, end)
+		return TextEditor.GetTextBetween (begin, end) or string.Empty
 		
 	protected TextLength:
 		get: return TextEditor.Length
