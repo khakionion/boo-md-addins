@@ -1,16 +1,17 @@
 namespace Boo.MonoDevelop.ProjectModel
 
+import MonoDevelop.Ide.TypeSystem as MD
+
 import Boo.Lang.Compiler.Ast
-import MonoDevelop.Projects.Dom as MD
 import Boo.Lang.PatternMatching
 
 class DomConversionVisitor(DepthFirstVisitor):
 	
-	_result as MD.CompilationUnit
-	_currentType as MD.DomType
+	_result as SyntaxTree
+	_currentType as MD.IType
 	_namespace as string
 	
-	def constructor(result as MD.CompilationUnit):
+	def constructor(result as MD.SyntaxTree):
 		_result = result
 		
 	override def OnModule(node as Module):

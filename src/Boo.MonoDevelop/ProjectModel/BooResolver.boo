@@ -1,23 +1,20 @@
 namespace Boo.MonoDevelop.ProjectModel
 
-import MonoDevelop.Projects.Dom
-import MonoDevelop.Projects.Dom.Parser
+import MonoDevelop.Ide.TypeSystem
 
-class BooResolver(IResolver):
-	_dom as ProjectDom
-	_compilationUnit as ICompilationUnit
+class BooResolver:
+	_compilationUnit as SyntaxTree
 
-	def constructor(dom as ProjectDom, compilationUnit as ICompilationUnit, fileName as string):
-		_dom = dom
+	def constructor(compilationUnit as SyntaxTree, fileName as string):
 		_compilationUnit = compilationUnit
 		
-	def Resolve(result as ExpressionResult, location as DomLocation):
+	def Resolve(result as ExpressionResult, location as TextLocation):
 		type = TypeAt(location)
 		if type is not null:
 			return MemberResolveResult(type)
 		return null
 		
-	private def TypeAt(location as DomLocation):
+	private def TypeAt(location as TextLocation):
 		if _compilationUnit is null:
 			return null
 			

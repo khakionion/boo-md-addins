@@ -3,7 +3,6 @@ namespace Boo.MonoDevelop.Completion
 import System
 import Boo.Lang.PatternMatching
 
-import MonoDevelop.Projects.Dom
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.CodeCompletion
 

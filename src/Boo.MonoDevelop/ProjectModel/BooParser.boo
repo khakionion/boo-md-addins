@@ -3,14 +3,13 @@ namespace Boo.MonoDevelop.ProjectModel
 import System
 import System.IO
 
-import MonoDevelop.Projects.Dom
-import MonoDevelop.Projects.Dom.Parser
+import MonoDevelop.Ide.TypeSystem
 
 import Boo.Lang.Compiler
 
 import Boo.MonoDevelop.Util
 
-class BooParser(AbstractParser):
+class BooParser(AbstractTypeSystemParser):
 	
 	_compiler = Boo.Lang.Compiler.BooCompiler()
 	
