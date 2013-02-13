@@ -157,6 +157,7 @@
 				<include name="${md.build.dir}/MonoDevelop.Core.dll" />
 				<include name="${md.build.dir}/MonoDevelop.Ide.dll" />
 				<include name="${md.build.dir}/Mono.TextEditor.dll" />
+				<include name="${md.build.dir}/ICSharpCode.NRefactory.dll" />
 				<include name="${md.build.dir}/ICSharpCode.NRefactory.CSharp.dll" />
 			</references>
 			<pkg-references>
@@ -223,6 +224,7 @@
 				<include name="${build.dir}/Boo.Ide.dll" />
 				<include name="${gdk-sharp.dll}" />
 				<include name="${gtk-sharp.dll}" />
+				<include name="${md.build.dir}/ICSharpCode.NRefactory.dll" />
 			</references>
 			
 			<embed basedir="src/Boo.MonoDevelop">
