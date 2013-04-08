@@ -120,9 +120,9 @@ class BooEditorCompletion(BooCompletionTextEditorExtension):
 	override Primitives:
 		get: return PRIMITIVES
 		
-	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char):
-		triggerWordLength = 0
-		return HandleCodeCompletion(context, completionChar, triggerWordLength)
+#	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char):
+#		triggerWordLength = 0
+#		return HandleCodeCompletion(context, completionChar, triggerWordLength)
 		
 	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char, ref triggerWordLength as int):
 #		print "HandleCodeCompletion(${context.ToString()}, ${completionChar.ToString()})"
@@ -163,21 +163,21 @@ class BooEditorCompletion(BooCompletionTextEditorExtension):
 		return null
 				
 	def CompleteNamespacePatterns(context as CodeCompletionContext):
-		types = (MemberType.Namespace, MemberType.Type)
-		for pattern in NAMESPACE_PATTERNS:
-			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
-			return completions if completions is not null
+#		types = (MemberType.Namespace, MemberType.Type)
+#		for pattern in NAMESPACE_PATTERNS:
+#			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
+#			return completions if completions is not null
 			
 		return null
 		
 	def CompleteTypePatterns(context as CodeCompletionContext):
-		types = (MemberType.Namespace, MemberType.Type)
-		
-		for pattern in TYPE_PATTERNS:
-			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
-			if completions is not null:
-				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
-				return completions
+#		types = (MemberType.Namespace, MemberType.Type)
+#		
+#		for pattern in TYPE_PATTERNS:
+#			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
+#			if completions is not null:
+#				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
+#				return completions
 		return null
 			
 	override def ShouldEnableCompletionFor(fileName as string):

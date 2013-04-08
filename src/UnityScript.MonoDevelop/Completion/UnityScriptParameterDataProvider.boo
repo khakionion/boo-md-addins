@@ -3,6 +3,7 @@ namespace UnityScript.MonoDevelop.Completion
 import System.Linq
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.CodeCompletion
+import ICSharpCode.NRefactory.Completion
 import Boo.Ide
 
 class UnityScriptParameterDataProvider(IParameterDataProvider):

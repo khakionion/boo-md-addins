@@ -1,12 +1,17 @@
 namespace UnityScript.MonoDevelop.ProjectModel
 
-import MonoDevelop.Projects.Dom
-import MonoDevelop.Projects.Dom.Parser
+import System
+import System.IO
+
+import MonoDevelop.Projects
+import MonoDevelop.Ide.TypeSystem
+
+import ICSharpCode.NRefactory.CSharp
 
 import Boo.MonoDevelop.Util
 import UnityScript.MonoDevelop
 
-class UnityScriptParser(AbstractParser):
+class UnityScriptParser(AbstractTypeSystemParser):
 	
 	public static final MimeType = "text/x-unityscript"
 	
@@ -14,20 +19,20 @@ class UnityScriptParser(AbstractParser):
 		# super("UnityScript", MimeType)
 		super()
 		
-	override def CanParse(fileName as string):
-		return IsUnityScriptFile(fileName)
+#	override def CanParse(fileName as string):
+#		return IsUnityScriptFile(fileName)
 		
-	override def Parse(dom as ProjectDom, fileName as string, content as string):
-		result = ParseUnityScript(fileName, content)
+	override def Parse(storeAst as bool, fileName as string, reader as TextReader, project as Project):
+		result = ParseUnityScript(fileName, reader.ReadToEnd ())
 		
-		document = ParsedDocument(fileName)
-		document.CompilationUnit = CompilationUnit(fileName)
-		if dom is null: return document
-		
-		try:
-			result.CompileUnit.Accept(DomConversionVisitor(document.CompilationUnit))
-		except e:
-			LogError e
+		document = DefaultParsedDocument(fileName)
+#		document.CompilationUnit = CompilationUnit(fileName)
+#		if dom is null: return document
+#		
+#		try:
+#			result.CompileUnit.Accept(DomConversionVisitor(document.CompilationUnit))
+#		except e:
+#			LogError e
 		
 		return document
 		

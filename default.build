@@ -213,7 +213,6 @@
 				<include name="${md.build.dir}/MonoDevelop.Core.dll" />
 				<include name="${md.build.dir}/MonoDevelop.Ide.dll" />
 				<include name="${md.build.dir}/Mono.TextEditor.dll" />
-				<include name="${md.build.dir}/NRefactory.dll" />
 				<include name="${md.build.dir}/MonoDevelop.Refactoring.dll" />
 				<include name="${md.build.dir}/MonoDevelop.SourceEditor2.dll" />
 				<include name="${md.build.dir}/MonoDevelop.DesignerSupport.dll" />
@@ -225,6 +224,7 @@
 				<include name="${gdk-sharp.dll}" />
 				<include name="${gtk-sharp.dll}" />
 				<include name="${md.build.dir}/ICSharpCode.NRefactory.dll" />
+				<include name="${md.build.dir}/ICSharpCode.NRefactory.CSharp.dll" />
 			</references>
 			
 			<embed basedir="src/Boo.MonoDevelop">
@@ -283,12 +283,19 @@
 				<include name="${md.build.dir}/MonoDevelop.Core.dll" />
 				<include name="${md.build.dir}/MonoDevelop.Ide.dll" />
 				<include name="${md.build.dir}/MonoDevelop.SourceEditor2.dll" />
-				<include name="${md.build.dir}/Mono.Debugging.dll" />
 				<include name="${md.build.dir}/MonoDevelop.Debugger.dll" />
 				<include name="${md.build.dir}/MonoDevelop.DesignerSupport.dll" />
 				<include name="${build.dir}/Boo.MonoDevelop.Util.dll" />
 				<include name="${build.dir}/Boo.Ide.dll" />
 				<include name="${build.dir}/UnityScript.Ide.dll" />
+				<include name="${md.build.dir}/MonoDevelop.Refactoring.dll" />
+				<include name="${boo.extensions.build.dir}/Boo.Adt.dll" />
+				<include name="${boo.extensions.build.dir}/Boo.Lang.Parser.dll" />
+				<include name="${boo.extensions.build.dir}/Boo.Lang.CodeDom.dll" />
+				<include name="${gdk-sharp.dll}" />
+				<include name="${gtk-sharp.dll}" />
+				<include name="${md.build.dir}/ICSharpCode.NRefactory.dll" />
+				<include name="${md.build.dir}/ICSharpCode.NRefactory.CSharp.dll" />
 			</references>
 			
 			<embed basedir="src/UnityScript.MonoDevelop">
