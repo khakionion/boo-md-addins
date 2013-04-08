@@ -5,9 +5,10 @@ import System.Linq
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.CodeCompletion
 import ICSharpCode.NRefactory.Completion
+import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class BooParameterDataProvider(IParameterDataProvider):
+class BooParameterDataProvider(IParameterDataProvider, IParameterCompletionDataFactory):
 	_methods as List of MethodDescriptor
 	_document as Document
 	
@@ -15,8 +16,11 @@ class BooParameterDataProvider(IParameterDataProvider):
 		_methods = methods
 		_document = document
 		
-	OverloadCount:
+	Count:
 		get: return _methods.Count
+		
+	StartOffset:
+		get: return 0
 
 	def GetCurrentParameterIndex(widget as ICompletionWidget, context as CodeCompletionContext):
 		line = _document.Editor.GetLineText(context.TriggerLine)
@@ -31,10 +35,16 @@ class BooParameterDataProvider(IParameterDataProvider):
 				return /,/.Split(line[0:offset+1]).Length
 		return -1
 
+	def GetHeading (overloadIndex as int, parameterMarkup as (string), currentParameterIndex as int):
+		return GetMethodMarkup (overloadIndex, parameterMarkup, currentParameterIndex)
+		
 	def GetMethodMarkup(overloadIndex as int, parameterMarkup as (string), currentParameterIndex as int):
 		methodName = System.Security.SecurityElement.Escape(_methods[overloadIndex].Name)
 		methodReturnType = System.Security.SecurityElement.Escape(_methods[overloadIndex].ReturnType)
 		return "${methodName}(${string.Join(',',parameterMarkup)}) as ${methodReturnType}"
+		
+	def GetDescription (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
 		
 	def GetParameterMarkup(overloadIndex as int, parameterIndex as int):
 		return System.Security.SecurityElement.Escape(Enumerable.ElementAt(_methods[overloadIndex].Arguments, parameterIndex))

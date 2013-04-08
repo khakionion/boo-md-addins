@@ -128,7 +128,6 @@
   <ItemGroup>
     <Folder Include="Refactoring\" />
     <Folder Include="Completion\" />
-    <Folder Include="Completion\" />
     <Folder Include="Editor\" />
     <Folder Include="ProjectModel\GUI\" />
   </ItemGroup>

@@ -14,7 +14,7 @@ import ICSharpCode.NRefactory.TypeSystem.Implementation
 class DomConversionVisitor(DepthFirstVisitor):
 	
 	_result as SyntaxTree
-	_currentType as IType
+	_currentType as TypeDeclaration
 	_namespace as string
 	
 	def constructor(result as SyntaxTree):
@@ -25,44 +25,44 @@ class DomConversionVisitor(DepthFirstVisitor):
 		Visit(node.Namespace)
 		Visit(node.Members)
 		
-#	override def OnNamespaceDeclaration(node as Ast.NamespaceDeclaration):
-#		_namespace = node.Name
+	override def OnNamespaceDeclaration(node as Boo.Lang.Compiler.Ast.NamespaceDeclaration):
+		_namespace = node.Name
 #		region = BodyRegionOf(node.ParentNode)
+#		domUsing = UsingStatement ()
 #		domUsing = DomUsing(IsFromNamespace: true, Region: region)
-#		domUsing.Add(_namespace)
-#		_result.Add(domUsing)
+		astNamespace = ICSharpCode.NRefactory.CSharp.NamespaceDeclaration (Name: _namespace)
+		_result.AddChild (astNamespace, SyntaxTree.MemberRole)
 		
-#	override def OnImport(node as Import):
-#		region = BodyRegionOf(node)
-#		domUsing = DomUsing(Region: region)
-#		domUsing.Add(node.Namespace)
-#		_result.Add(domUsing)
+	override def OnImport(node as Import):
+		domUsing = UsingDeclaration (node.Namespace)
+		_result.AddChild (domUsing, SyntaxTree.MemberRole)
 		
-#	override def OnClassDefinition(node as ClassDefinition):
-#		OnTypeDefinition(node, ClassType.Class)
-#		
-#	override def OnInterfaceDefinition(node as InterfaceDefinition):
-#		OnTypeDefinition(node, ClassType.Interface)
-#		
-#	override def OnStructDefinition(node as StructDefinition):
-#		OnTypeDefinition(node, ClassType.Struct)
-#		
-#	override def OnEnumDefinition(node as EnumDefinition):
-#		OnTypeDefinition(node, ClassType.Enum)
-#		
-#	def OnTypeDefinition(node as TypeDefinition, classType as ClassType):
-#		converted = DomType(
-#						Name: node.Name,
-#						ClassType: classType,
+	override def OnClassDefinition(node as ClassDefinition):
+		OnTypeDefinition(node, ClassType.Class)
+		
+	override def OnInterfaceDefinition(node as InterfaceDefinition):
+		OnTypeDefinition(node, ClassType.Interface)
+		
+	override def OnStructDefinition(node as StructDefinition):
+		OnTypeDefinition(node, ClassType.Struct)
+		
+	override def OnEnumDefinition(node as EnumDefinition):
+		OnTypeDefinition(node, ClassType.Enum)
+		
+	def OnTypeDefinition(node as TypeDefinition, classType as ClassType):
+		converted = TypeDeclaration (
+						Name: node.Name,
+						ClassType: classType,
 #						Location: LocationOf(node),
 #						BodyRegion: BodyRegionOf(node),
 #						DeclaringType: _currentType,
-#						Modifiers: ModifiersFrom(node))
-#		
-#		WithCurrentType converted:
-#			Visit(node.Members)
-#					
-#		AddType(converted)
+						Modifiers: ModifiersFrom(node)
+					)
+		
+		WithCurrentType converted:
+			Visit(node.Members)
+					
+		AddType(converted)
 		
 #	override def OnCallableDefinition(node as CallableDefinition):
 #		parameters = System.Collections.Generic.List[of IParameter]()
@@ -77,16 +77,16 @@ class DomConversionVisitor(DepthFirstVisitor):
 #		
 #		AddType(converted)
 		
-#	override def OnField(node as Field):
-#		if _currentType is null: return
-#		
-#		_currentType.Add(DomField(
-#							Name: node.Name,
-#							ReturnType: ParameterTypeFrom(node.Type),
+	override def OnField(node as Field):
+		if _currentType is null: return
+		
+		_currentType.AddChild(FieldDeclaration(
+							Name: node.Name,
+							ReturnType: ParameterTypeFrom(node.Type),
 #							Location: LocationOf(node),
 #							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType,
-#							Modifiers: ModifiersFrom(node)))
+							Modifiers: ModifiersFrom(node)), SyntaxTree.MemberRole)
 							
 #	override def OnProperty(node as Property):
 #		if _currentType is null: return
@@ -122,50 +122,49 @@ class DomConversionVisitor(DepthFirstVisitor):
 #							DeclaringType: _currentType)
 #		_currentType.Add(converted)
 #							
-#	override def OnEnumMember(node as EnumMember):
-#		if _currentType is null: return
-#		
-#		_currentType.Add(DomField(
-#							Name: node.Name,
+	override def OnEnumMember(node as EnumMember):
+		if _currentType is null: return
+		
+		_currentType.AddChild (FieldDeclaration (
+							Name: node.Name,
 #							ReturnType: DomReturnType(_currentType),
 #							Location: LocationOf(node),
 #							DeclaringType: _currentType,
-#							Modifiers: Modifiers.Public | Modifiers.Static | Modifiers.Final))
+							Modifiers: Modifiers.Public | Modifiers.Static | Modifiers.Sealed), SyntaxTree.MemberRole)
 							
 	override def OnConstructor(node as Constructor):
-		OnMethodImpl(node) #, MethodModifier.IsConstructor)
+		OnMethodImpl(node)
 		
 	override def OnDestructor(node as Destructor):
-		OnMethodImpl(node) #, MethodModifier.IsFinalizer)
+		OnMethodImpl(node)
 		
 	override def OnMethod(node as Method):
-		OnMethodImpl(node) #, MethodModifier.None)
+		OnMethodImpl(node)
 		
-	def OnMethodImpl(node as Method): #, methodModifier as MethodModifier):
-		pass
-#		if _currentType is null: return
-#		
-#		converted = DefaultUnresolvedMethod(_currentType, node.Name)
-#							
-##							Location: LocationOf(node),
-##							BodyRegion: BodyRegionOf(node),
-##							DeclaringType: _currentType,
-##							ReturnType: (MethodReturnTypeFrom(node) if IsRegularMethod(methodModifier) else null),
-##							Modifiers: ModifiersFrom(node))
-#							# MethodModifier: methodModifier)
-#							
-##		for parameter in node.Parameters:
-##			converted.Add(ParameterFrom(converted, parameter))
-#		
-#		_currentType.Add(converted)
+	def OnMethodImpl(node as Method):
+		if _currentType is null: return
 		
-#	def IsRegularMethod(modifier as MethodModifier):
-#		return true
-#		match modifier:
-#			case MethodModifier.IsConstructor | MethodModifier.IsFinalizer:
-#				return false
-#			otherwise:
-#				return true
+		converted = MethodDeclaration (
+							Name: node.Name,
+#							Location: LocationOf(node),
+#							BodyRegion: BodyRegionOf(node),
+#							DeclaringType: _currentType,
+							ReturnType: (MethodReturnTypeFrom(node) if IsRegularMethod(node.NodeType) else null),
+							Modifiers: ModifiersFrom(node))
+#							MethodModifier: methodModi			fier)
+							
+		for parameter in node.Parameters:
+			converted.Parameters.Add(ParameterFrom(converted, parameter))
+		
+		_currentType.AddChild (converted, SyntaxTree.MemberRole)
+		
+	def IsRegularMethod(modifier as Boo.Lang.Compiler.Ast.NodeType):
+		return true
+		match modifier:
+			case Boo.Lang.Compiler.Ast.NodeType.Constructor | Boo.Lang.Compiler.Ast.NodeType.Destructor:
+				return false
+			otherwise:
+				return true
 		
 	def ModifiersFrom(node as TypeMember):
 		modifiers = Modifiers.None
@@ -177,15 +176,15 @@ class DomConversionVisitor(DepthFirstVisitor):
 		modifiers |= Modifiers.Virtual if node.IsVirtual
 		modifiers |= Modifiers.Abstract if node.IsAbstract
 		modifiers |= Modifiers.Override if node.IsOverride
-#		modifiers |= Modifiers.Final if node.IsFinal
+		modifiers |= Modifiers.Sealed if node.IsFinal
 		return modifiers
 		
-#	def ParameterFrom(declaringMember as IMember, parameter as ParameterDeclaration):
-#		return DefaultUnresolvedParameter(ParameterTypeFrom (parameter.Type),
-#					Name: parameter.Name)
-##					DeclaringMember: declaringMember, 
-##					ReturnType: ParameterTypeFrom(parameter.Type),
-##					Location: LocationOf(parameter))
+	def ParameterFrom(declaringMember as MethodDeclaration, parameter as Boo.Lang.Compiler.Ast.ParameterDeclaration):
+		return ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: SimpleType (parameter.Type.Entity.Name),
+					Name: parameter.Name)
+#					DeclaringMember: declaringMember, 
+#					ReturnType: ParameterTypeFrom(parameter.Type),
+#					Location: LocationOf(parameter))
 					
 	virtual def MethodReturnTypeFrom(method as Method):
 		if method.ReturnType is not null:
@@ -238,13 +237,12 @@ class DomConversionVisitor(DepthFirstVisitor):
 			otherwise:
 				return UnknownType("System", "Void", 0)
 		
-	def AddType(type as ITypeDefinition):
-		pass
-#		if _currentType is not null:
-#			_currentType.Add(type)
-#		else:
+	def AddType(type as TypeDeclaration):
+		if _currentType is not null:
+			_currentType.AddChild (type, SyntaxTree.MemberRole)
+		else:
 #			type.Namespace = _namespace
-#			_result.Add(type)
+			_result.AddChild (type, SyntaxTree.MemberRole)
 		
 	def WithCurrentType(type as ITypeDefinition, block as callable()):
 		saved = _currentType

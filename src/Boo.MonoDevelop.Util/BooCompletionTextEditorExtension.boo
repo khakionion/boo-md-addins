@@ -22,6 +22,7 @@ import MonoDevelop.Core
 import MonoDevelop.Components
 import MonoDevelop.Components.Commands
 
+import ICSharpCode.NRefactory.TypeSystem
 import ICSharpCode.NRefactory.CSharp
 import ICSharpCode.NRefactory.CSharp.Completion
 import ICSharpCode.NRefactory.CSharp.TypeSystem
@@ -293,17 +294,16 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			return
 			
 		location = TextEditor.Caret.Location
-		# type = unit.GetTypeAt(location.Line, location.Column)
-		type = null as TypeDeclaration
+		type = unit.GetNodeAt of TypeDeclaration(location)
 		result = System.Collections.Generic.List of PathEntry()
 		ambience = GetAmbience()
-		member = null
+		member = null as EntityDeclaration
 		node = unit as AstNode
 		
-		# if(type != null):
-		#	member = type.GetMemberAt(location.Line, location.Column)
+		if type != null:
+			member = type.GetNodeAt of EntityDeclaration(location)
 			
-		if(member != null):
+		if member != null:
 			node = member
 		elif(type != null):
 			node = type
@@ -319,12 +319,12 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 				else:
 					entry = PathEntry(CompilationUnitDataProvider.Pixbuf, region.Name)
 				entry.Position = EntryPosition.Right
-			# else:
-				# entry = PathEntry(MonoDevelop.Ide.Gui.Stock.Literal, ambience.GetString (node as IEntity, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
-				# entry = PathEntry(ImageService.GetPixbuf(MonoDevelop.Ide.TypeSystem.Stock.GetStockIcon (node as IType), Gtk.IconSize.Menu), ambience.GetString (node, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
-			# entry.Tag = node
-			# result.Insert(0, entry)
-			# node = node.Parent
+			else:
+#				entry = PathEntry(MonoDevelop.Ide.Gui.Stock.Literal, ambience.GetString (node as IEntity, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
+				entry = PathEntry(ImageService.GetPixbuf(MonoDevelop.Ide.TypeSystem.Stock.GetStockIcon (node as ITypeDefinition), Gtk.IconSize.Menu), ambience.GetString (node as ICSharpCode.NRefactory.TypeSystem.IType, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
+			entry.Tag = node
+			result.Insert(0, entry)
+			node = node.Parent
 			
 		noSelection as PathEntry = null
 		if(type == null):
@@ -418,7 +418,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			# Console.WriteLine ("Jumping to {0}", location.Name)
 			IdeApp.Workbench.OpenDocument (location.File, location.Line, location.Column, OpenDocumentOptions.HighlightCaretLine)
 			
-	static def MembersAreEqual(memberInfo as MemberInfo, imember as IMember):
+	static def MembersAreEqual(memberInfo as MemberInfo, imember as ICSharpCode.NRefactory.TypeSystem.IMember):
 		# Console.WriteLine ("Checking {0}", imember.FullName)
 		if not (memberInfo.Name.Equals (imember.Name, StringComparison.Ordinal) or \
 		(memberInfo.Name.Equals (".ctor", StringComparison.Ordinal) and imember.Name.Equals ("constructor", StringComparison.Ordinal))):
@@ -456,31 +456,31 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		return true
 		
 
-def IconForEntity(member as IEntity) as MonoDevelop.Core.IconId:
+def IconForEntity(member as Boo.Lang.Compiler.TypeSystem.IEntity) as MonoDevelop.Core.IconId:
 	match member.EntityType:
-		case EntityType.BuiltinFunction:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.BuiltinFunction:
 			return MonoDevelop.Ide.Gui.Stock.Method
-		case EntityType.Constructor:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Constructor:
 			return MonoDevelop.Ide.Gui.Stock.Method
-		case EntityType.Method:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Method:
 			return MonoDevelop.Ide.Gui.Stock.Method
-		case EntityType.Local:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Local:
 			return MonoDevelop.Ide.Gui.Stock.Field
-		case EntityType.Field:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Field:
 			return MonoDevelop.Ide.Gui.Stock.Field
-		case EntityType.Property:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Property:
 			return MonoDevelop.Ide.Gui.Stock.Property
-		case EntityType.Event:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Event:
 			return MonoDevelop.Ide.Gui.Stock.Event
-		case EntityType.Type:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Type:
 			type as Boo.Lang.Compiler.TypeSystem.IType = member
 			if type.IsEnum: return MonoDevelop.Ide.Gui.Stock.Enum
 			if type.IsInterface: return MonoDevelop.Ide.Gui.Stock.Interface
 			if type.IsValueType: return MonoDevelop.Ide.Gui.Stock.Struct
 			return MonoDevelop.Ide.Gui.Stock.Class
-		case EntityType.Namespace:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Namespace:
 			return MonoDevelop.Ide.Gui.Stock.NameSpace
-		case EntityType.Ambiguous:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Ambiguous:
 			ambiguous as Ambiguous = member
 			return IconForEntity(ambiguous.Entities[0])
 		otherwise:
