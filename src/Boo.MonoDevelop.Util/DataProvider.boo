@@ -1,6 +1,8 @@
 namespace Boo.MonoDevelop.Util.Completion
 
 import System
+import System.Linq
+import System.Text
 import System.Collections.Generic
 
 import MonoDevelop.Ide
@@ -26,7 +28,7 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 	def constructor(document as Document, tag as object, ambience as Ambience):
 		_memberList = List of AstNode()
 		_document = document
-		_tag = (tag as AstNode).Parent
+		_tag = tag
 		_ambience = ambience
 		Reset()
 		
@@ -37,26 +39,49 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 			while(types.Count > 0):
 				type = types.Pop()
 				_memberList.Add(type)
-				#for innerType in type.InnerTypes:
-				#	types.Push(innerType)
+				for innerType in type.Children.Where({child | child isa TypeDeclaration}):
+					types.Push(innerType)
 		elif(_tag isa TypeDeclaration):
 			_memberList.AddRange((_tag as TypeDeclaration).Members)
+		MonoDevelop.Core.LoggingService.LogError ("Publishing {0} members for {1}", IconCount, _document.Name)
 		_memberList.Sort({x,y|string.Compare(GetString(_ambience,x), GetString(_ambience,y), StringComparison.OrdinalIgnoreCase)})
 		
 	def GetString(ambience as Ambience, member as AstNode):
-		flags = OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates
-		if(_tag isa SyntaxTree):
-			flags |= OutputFlags.UseFullInnerTypeName
-		return ambience.GetString(member as IEntity, flags)
+		return GetName (member)
 		
+	def GetName (node as AstNode):
+		if _tag isa SyntaxTree:
+			if node isa TypeDeclaration:
+				sb = StringBuilder ((node as TypeDeclaration).Name)
+				while node.Parent isa TypeDeclaration:
+					node = node.Parent
+					sb.Insert (0, (node as TypeDeclaration).Name + ".")
+				return sb.ToString ()
+				
+			if (node is EntityDeclaration):
+				return (node as EntityDeclaration).Name
+			return (node as VariableInitializer).Name
+		return string.Empty
+
 	def GetText(index as int) as string:
-		return GetString (_ambience, _memberList[index])
+		return GetName (_memberList[index])
 		
 	def GetMarkup(index as int) as string:
 		return GetText (index)
 		
 	def GetIcon(index as int) as Gdk.Pixbuf:
-		return ImageService.GetPixbuf(MonoDevelop.Ide.TypeSystem.Stock.GetStockIcon (_memberList[index] as IEntity), Gtk.IconSize.Menu)
+		icon = "md-field"
+		if (_memberList[index] isa TypeDeclaration):
+			icon = "md-class"
+		elif (_memberList[index] isa NamespaceDeclaration):
+			icon = "md-name-space"
+		elif (_memberList[index] isa FieldDeclaration):
+			icon = "md-field"
+		elif (_memberList[index] isa PropertyDeclaration):
+			icon = "md-property"
+		elif (_memberList[index] isa MethodDeclaration):
+			icon = "md-method"
+		return ImageService.GetPixbuf(icon, Gtk.IconSize.Menu)
 		
 	def GetTag(index as int) as object:
 		return _memberList[index]

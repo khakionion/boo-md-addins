@@ -102,8 +102,7 @@
 	</Extension>
 	
 	<Extension path = "/MonoDevelop/TypeSystem/Parser">
-		<Parser id = "BooParser"
-			fileExtensions=".boo"
+		<Parser mimeType = "text/x-boo"
 			class = "Boo.MonoDevelop.ProjectModel.BooParser" />
 	</Extension>
 	

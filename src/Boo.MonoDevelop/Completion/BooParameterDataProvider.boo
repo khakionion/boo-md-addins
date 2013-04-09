@@ -43,6 +43,9 @@ class BooParameterDataProvider(IParameterDataProvider, IParameterCompletionDataF
 		methodReturnType = System.Security.SecurityElement.Escape(_methods[overloadIndex].ReturnType)
 		return "${methodName}(${string.Join(',',parameterMarkup)}) as ${methodReturnType}"
 		
+	def GetParameterDescription (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
+	
 	def GetDescription (overloadIndex as int, parameterIndex as int):
 		return GetParameterMarkup (overloadIndex, parameterIndex)
 		

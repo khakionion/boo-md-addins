@@ -4,6 +4,7 @@ import System
 import System.IO
 
 import MonoDevelop.Projects
+import MonoDevelop.Core
 import MonoDevelop.Ide.TypeSystem
 
 import ICSharpCode.NRefactory.CSharp
@@ -21,7 +22,8 @@ class BooParser(AbstractTypeSystemParser):
 		_compiler.Parameters.Pipeline = pipeline
 		
 	override def Parse(storeAst as bool, fileName as string, reader as TextReader, project as Project):
-		document = DefaultParsedDocument(fileName)
+		LoggingService.LogError ("Parsing {0}", fileName)
+		document = DefaultParsedDocument(fileName, Ast: SyntaxTree (FileName: fileName))
 		
 		try:
 			index = ProjectIndexFactory.ForProject(project)
@@ -29,7 +31,7 @@ class BooParser(AbstractTypeSystemParser):
 			module = index.Parse(fileName, reader.ReadToEnd ())
 			IntroduceModuleClasses(module).Accept(DomConversionVisitor(document.GetAst of SyntaxTree ()))
 		except e:
-			LogError e
+			LoggingService.LogError ("Parse error", e)
 		
 		return document
 		

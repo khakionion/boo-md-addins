@@ -4,6 +4,7 @@ namespace Boo.MonoDevelop.ProjectModel
 import Boo.Lang.Compiler.Ast
 import Boo.Lang.PatternMatching
 
+import MonoDevelop.Core
 import MonoDevelop.Ide.TypeSystem
 
 import ICSharpCode.NRefactory
@@ -22,8 +23,15 @@ class DomConversionVisitor(DepthFirstVisitor):
 		
 	override def OnModule(node as Module):
 		_namespace = null
-		Visit(node.Namespace)
-		Visit(node.Members)
+		try:
+			Visit(node.Namespace)
+			Visit(node.Members)
+		except e:
+			MonoDevelop.Core.LoggingService.LogError ("Error in dom conversion", e)
+			ex = e.InnerException
+			while null != ex:
+				MonoDevelop.Core.LoggingService.LogError (ex.StackTrace)
+				ex = ex.InnerException
 		
 	override def OnNamespaceDeclaration(node as Boo.Lang.Compiler.Ast.NamespaceDeclaration):
 		_namespace = node.Name
@@ -31,6 +39,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 #		domUsing = UsingStatement ()
 #		domUsing = DomUsing(IsFromNamespace: true, Region: region)
 		astNamespace = ICSharpCode.NRefactory.CSharp.NamespaceDeclaration (Name: _namespace)
+		LoggingService.LogError ("Found namespace {0}", _namespace)
 		_result.AddChild (astNamespace, SyntaxTree.MemberRole)
 		
 	override def OnImport(node as Import):
@@ -50,6 +59,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 		OnTypeDefinition(node, ClassType.Enum)
 		
 	def OnTypeDefinition(node as TypeDefinition, classType as ClassType):
+		LoggingService.LogError ("Found type {0}", node.FullName)
 		converted = TypeDeclaration (
 						Name: node.Name,
 						ClassType: classType,
@@ -180,7 +190,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 		return modifiers
 		
 	def ParameterFrom(declaringMember as MethodDeclaration, parameter as Boo.Lang.Compiler.Ast.ParameterDeclaration):
-		return ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: SimpleType (parameter.Type.Entity.Name),
+		return ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: ParameterTypeFrom (parameter.Type),
 					Name: parameter.Name)
 #					DeclaringMember: declaringMember, 
 #					ReturnType: ParameterTypeFrom(parameter.Type),
@@ -192,11 +202,11 @@ class DomConversionVisitor(DepthFirstVisitor):
 		
 		match ReturnTypeDetector().Detect(method):
 			case ReturnTypeDetector.Result.Yields:
-				return UnknownType ("System.Collections", "IEnumerator", 0)
+				return SimpleType ("System.Collections.IEnumerator")
 			case ReturnTypeDetector.Result.Returns:
 				return DefaultReturnType()
 			otherwise:
-				return UnknownType ("System", "Void", 0)
+				return AstType.Null
 		
 	class ReturnTypeDetector(DepthFirstVisitor):
 		enum Result:
@@ -213,9 +223,9 @@ class DomConversionVisitor(DepthFirstVisitor):
 		override def OnBlockExpression(node as BlockExpression):
 			pass // skip over closures
 		
-#		override def OnReturnStatement(node as ReturnStatement):
-#			if node.Expression is null: return
-#			_result = Result.Returns
+		override def OnReturnStatement(node as Boo.Lang.Compiler.Ast.ReturnStatement):
+			if node.Expression is null: return
+			_result = Result.Returns
 			
 		override def OnYieldStatement(node as YieldStatement):
 			_result = Result.Yields
@@ -225,17 +235,17 @@ class DomConversionVisitor(DepthFirstVisitor):
 		if typeRef is null: return DefaultReturnType()
 		return ReturnTypeFrom(typeRef)
 		
-	virtual def ReturnTypeFrom(typeRef as TypeReference) as ITypeReference:
+	virtual def ReturnTypeFrom(typeRef as TypeReference):
 		match typeRef:
 			case SimpleTypeReference(Name: name):
-				return UnknownType (string.Empty, name, 0)
+				return SimpleType (name)
 #			case ArrayTypeReference(ElementType: elementType):
 #				type = ReturnTypeFrom(elementType)
 #				type.ArrayDimensions = 1
 #				type.SetDimension(0, 1)
 #				return type
 			otherwise:
-				return UnknownType("System", "Void", 0)
+				return AstType.Null
 		
 	def AddType(type as TypeDeclaration):
 		if _currentType is not null:
@@ -244,7 +254,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 #			type.Namespace = _namespace
 			_result.AddChild (type, SyntaxTree.MemberRole)
 		
-	def WithCurrentType(type as ITypeDefinition, block as callable()):
+	def WithCurrentType(type as TypeDeclaration, block as callable()):
 		saved = _currentType
 		_currentType = type
 		try:
@@ -268,4 +278,4 @@ class DomConversionVisitor(DepthFirstVisitor):
 		return TextLocation(location.Line, location.Column)
 		
 	def DefaultReturnType():
-		return UnknownType ("System", "Object", 0)
+		return SimpleType ("object")

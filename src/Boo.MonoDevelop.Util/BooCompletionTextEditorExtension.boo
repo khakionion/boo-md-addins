@@ -273,10 +273,10 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		
 		tag = path[index].Tag
 		provider = null
-		if(tag isa SyntaxTree):
-			provider = CompilationUnitDataProvider(Document)
-		else:
-			provider = DataProvider(Document, tag, GetAmbience())
+#		if(tag isa SyntaxTree):
+#			provider = CompilationUnitDataProvider(Document)
+#		else:
+		provider = DataProvider(Document, tag, GetAmbience())
 			
 		window = DropDownBoxListWindow(provider)
 		window.SelectItem(tag)
@@ -287,10 +287,15 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			PathChanged(self, args)
 			
 	def UpdatePath(sender as object, args as Mono.TextEditor.DocumentLocationEventArgs):
-		if (Document == null or Document.ParsedDocument == null):
+		if (Document == null):
+			LoggingService.LogError ("Document is null!")
+			return
+		if (Document.ParsedDocument == null):
+			LoggingService.LogError ("ParsedDocument is null!")
 			return
 		unit = Document.ParsedDocument.GetAst of SyntaxTree ()
 		if(unit == null):
+			LoggingService.LogError ("SyntaxTree is null!")
 			return
 			
 		location = TextEditor.Caret.Location
