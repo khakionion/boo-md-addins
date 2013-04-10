@@ -22,6 +22,7 @@ import MonoDevelop.Core
 import MonoDevelop.Components
 import MonoDevelop.Components.Commands
 
+import ICSharpCode.NRefactory
 import ICSharpCode.NRefactory.TypeSystem
 import ICSharpCode.NRefactory.CSharp
 import ICSharpCode.NRefactory.CSharp.Completion
@@ -272,10 +273,6 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			return null
 		
 		tag = path[index].Tag
-		provider = null
-#		if(tag isa SyntaxTree):
-#			provider = CompilationUnitDataProvider(Document)
-#		else:
 		provider = DataProvider(Document, tag, GetAmbience())
 			
 		window = DropDownBoxListWindow(provider)
@@ -285,6 +282,35 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	protected virtual def OnPathChanged(args as DocumentPathChangedEventArgs):
 		if(PathChanged != null):
 			PathChanged(self, args)
+			
+	def GetTypeAt (unit as SyntaxTree, location as TextLocation):
+		types = unit.GetTypes (true).Where ({type | (type.Annotation (DomRegion) cast DomRegion).IsInside (TextLocation (location.Line+1, location.Column))})
+		found = types.FirstOrDefault ()
+		foundLine = -1
+		
+		if 1 < types.Count ():
+			for type in types:
+				if ((type.Annotation (DomRegion) cast DomRegion).BeginLine > foundLine):
+					found = type
+					foundLine = (type.Annotation (DomRegion) cast DomRegion).BeginLine
+		
+		return found
+		
+	def GetMemberAt (type as TypeDeclaration, location as TextLocation):
+		members = type.GetChildrenByRole (SyntaxTree.MemberRole)
+		found = null
+		foundLine = -1
+		
+		for member in members:
+			local = member.Annotation (TextLocation)
+			if null != local and location.Line == (local cast TextLocation).Line:
+				return member
+			region = member.Annotation (DomRegion)
+			if null != region and (region cast DomRegion).IsInside (location):
+				if null == found or (region cast DomRegion).BeginLine > foundLine:
+					found = member
+					foundLine = (region cast DomRegion).BeginLine
+		return found
 			
 	def UpdatePath(sender as object, args as Mono.TextEditor.DocumentLocationEventArgs):
 		if (Document == null):
@@ -299,14 +325,14 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			return
 			
 		location = TextEditor.Caret.Location
-		type = unit.GetNodeAt of TypeDeclaration(location)
+		type = GetTypeAt (unit, location)
 		result = System.Collections.Generic.List of PathEntry()
 		ambience = GetAmbience()
 		member = null as EntityDeclaration
 		node = unit as AstNode
 		
 		if type != null:
-			member = type.GetNodeAt of EntityDeclaration(location)
+			member = GetMemberAt (type, location)
 			
 		if member != null:
 			node = member
@@ -314,21 +340,8 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			node = type
 			
 		while(node != null):
-			entry as PathEntry
-			if(node isa SyntaxTree):
-				if(not Document.ParsedDocument.UserRegions.Any()):
-					break
-				region = Document.ParsedDocument.UserRegions.Where({r as FoldingRegion| r.Region.IsInside (location.Line, location.Column) }).LastOrDefault()
-				if(region == null):
-					entry = PathEntry(GettextCatalog.GetString("No region"))
-				else:
-					entry = PathEntry(CompilationUnitDataProvider.Pixbuf, region.Name)
-				entry.Position = EntryPosition.Right
-			else:
-#				entry = PathEntry(MonoDevelop.Ide.Gui.Stock.Literal, ambience.GetString (node as IEntity, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
-				entry = PathEntry(ImageService.GetPixbuf(MonoDevelop.Ide.TypeSystem.Stock.GetStockIcon (node as ITypeDefinition), Gtk.IconSize.Menu), ambience.GetString (node as ICSharpCode.NRefactory.TypeSystem.IType, OutputSettings (OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates)))
-			entry.Tag = node
-			result.Insert(0, entry)
+			if (not node isa SyntaxTree):
+				result.Insert(0, PathEntry(DataProvider.GetIconForNode (node), DataProvider.GetName (node), Tag: node.Parent))
 			node = node.Parent
 			
 		noSelection as PathEntry = null

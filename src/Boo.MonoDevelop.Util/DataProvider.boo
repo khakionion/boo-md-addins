@@ -11,6 +11,7 @@ import MonoDevelop.Ide.TypeSystem
 import MonoDevelop.Ide.Gui.Content
 import MonoDevelop.Components
 
+import ICSharpCode.NRefactory
 import ICSharpCode.NRefactory.CSharp
 import ICSharpCode.NRefactory.TypeSystem
 
@@ -42,25 +43,27 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 				for innerType in type.Children.Where({child | child isa TypeDeclaration}):
 					types.Push(innerType)
 		elif(_tag isa TypeDeclaration):
-			_memberList.AddRange((_tag as TypeDeclaration).Members)
-		MonoDevelop.Core.LoggingService.LogError ("Publishing {0} members for {1}", IconCount, _document.Name)
+			_memberList.AddRange((_tag as TypeDeclaration).GetChildrenByRole (SyntaxTree.MemberRole))
+		else:
+			MonoDevelop.Core.LoggingService.LogError ("No fallback for {0}", _tag.GetType ().FullName)
 		_memberList.Sort({x,y|string.Compare(GetString(_ambience,x), GetString(_ambience,y), StringComparison.OrdinalIgnoreCase)})
 		
 	def GetString(ambience as Ambience, member as AstNode):
 		return GetName (member)
 		
-	def GetName (node as AstNode):
-		if _tag isa SyntaxTree:
-			if node isa TypeDeclaration:
-				sb = StringBuilder ((node as TypeDeclaration).Name)
-				while node.Parent isa TypeDeclaration:
-					node = node.Parent
-					sb.Insert (0, (node as TypeDeclaration).Name + ".")
-				return sb.ToString ()
-				
-			if (node is EntityDeclaration):
-				return (node as EntityDeclaration).Name
+	static def GetName (node as AstNode):
+		if node isa TypeDeclaration:
+			sb = StringBuilder ((node as TypeDeclaration).Name)
+			while node.Parent isa TypeDeclaration:
+				node = node.Parent
+				sb.Insert (0, (node as TypeDeclaration).Name + ".")
+			return sb.ToString ()
+			
+		if (node isa EntityDeclaration):
+			return (node as EntityDeclaration).Name
+		if (node isa VariableInitializer):
 			return (node as VariableInitializer).Name
+		MonoDevelop.Core.LoggingService.LogError ("Can't get name for {0}", node.GetType ().FullName)
 		return string.Empty
 
 	def GetText(index as int) as string:
@@ -69,27 +72,36 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 	def GetMarkup(index as int) as string:
 		return GetText (index)
 		
-	def GetIcon(index as int) as Gdk.Pixbuf:
+	static def GetIconForNode (node as AstNode):
 		icon = "md-field"
-		if (_memberList[index] isa TypeDeclaration):
+		if (node isa TypeDeclaration):
 			icon = "md-class"
-		elif (_memberList[index] isa NamespaceDeclaration):
+		elif (node isa NamespaceDeclaration):
 			icon = "md-name-space"
-		elif (_memberList[index] isa FieldDeclaration):
+		elif (node isa FieldDeclaration):
 			icon = "md-field"
-		elif (_memberList[index] isa PropertyDeclaration):
+		elif (node isa PropertyDeclaration):
 			icon = "md-property"
-		elif (_memberList[index] isa MethodDeclaration):
+		elif (node isa MethodDeclaration):
 			icon = "md-method"
 		return ImageService.GetPixbuf(icon, Gtk.IconSize.Menu)
+		
+	def GetIcon(index as int) as Gdk.Pixbuf:
+		return GetIconForNode (_memberList[index])
 		
 	def GetTag(index as int) as object:
 		return _memberList[index]
 		
 	def ActivateItem(index as int):
-		location = _memberList[index].StartLocation
+		annotation = _memberList[index].Annotation (TextLocation)
+		if null == annotation:
+			location = (_memberList[index].Annotation (DomRegion) cast DomRegion).Begin
+		else:
+			location = annotation cast TextLocation
 		extEditor = _document.GetContent of IExtensibleTextEditor()
 		if(extEditor != null):
-			extEditor.SetCaretTo(Math.Max(1, location.Line), location.Column)
+			position = extEditor.GetPositionFromLineColumn (location.Line, location.Column)
+			if (position >= 0 and position < extEditor.Length):
+				extEditor.SetCaretTo(Math.Max(1, location.Line), location.Column)
 			
 
