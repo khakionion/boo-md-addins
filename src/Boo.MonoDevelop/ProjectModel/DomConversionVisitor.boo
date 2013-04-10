@@ -39,7 +39,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 #		domUsing = UsingStatement ()
 #		domUsing = DomUsing(IsFromNamespace: true, Region: region)
 		astNamespace = ICSharpCode.NRefactory.CSharp.NamespaceDeclaration (Name: _namespace)
-		LoggingService.LogError ("Found namespace {0}", _namespace)
+		astNamespace.AddAnnotation (BodyRegionOf (node))
 		_result.AddChild (astNamespace, SyntaxTree.MemberRole)
 		
 	override def OnImport(node as Import):
@@ -63,11 +63,11 @@ class DomConversionVisitor(DepthFirstVisitor):
 		converted = TypeDeclaration (
 						Name: node.Name,
 						ClassType: classType,
-#						Location: LocationOf(node),
-#						BodyRegion: BodyRegionOf(node),
 #						DeclaringType: _currentType,
 						Modifiers: ModifiersFrom(node)
 					)
+		converted.AddAnnotation (LocationOf (node))
+		converted.AddAnnotation (BodyRegionOf (node))
 		
 		WithCurrentType converted:
 			Visit(node.Members)
@@ -90,13 +90,16 @@ class DomConversionVisitor(DepthFirstVisitor):
 	override def OnField(node as Field):
 		if _currentType is null: return
 		
-		_currentType.AddChild(FieldDeclaration(
+		field = FieldDeclaration(
 							Name: node.Name,
 							ReturnType: ParameterTypeFrom(node.Type),
 #							Location: LocationOf(node),
 #							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType,
-							Modifiers: ModifiersFrom(node)), SyntaxTree.MemberRole)
+							Modifiers: ModifiersFrom(node))
+		field.AddAnnotation (LocationOf (node))
+		field.AddAnnotation (BodyRegionOf (node))
+		_currentType.AddChild (field, SyntaxTree.MemberRole)
 							
 #	override def OnProperty(node as Property):
 #		if _currentType is null: return
@@ -135,12 +138,13 @@ class DomConversionVisitor(DepthFirstVisitor):
 	override def OnEnumMember(node as EnumMember):
 		if _currentType is null: return
 		
-		_currentType.AddChild (FieldDeclaration (
+		field = FieldDeclaration(
 							Name: node.Name,
-#							ReturnType: DomReturnType(_currentType),
-#							Location: LocationOf(node),
 #							DeclaringType: _currentType,
-							Modifiers: Modifiers.Public | Modifiers.Static | Modifiers.Sealed), SyntaxTree.MemberRole)
+							Modifiers: ModifiersFrom(node))
+		field.AddAnnotation (LocationOf (node))
+		field.AddAnnotation (BodyRegionOf (node))
+		_currentType.AddChild (field, SyntaxTree.MemberRole)
 							
 	override def OnConstructor(node as Constructor):
 		OnMethodImpl(node)
@@ -162,6 +166,9 @@ class DomConversionVisitor(DepthFirstVisitor):
 							ReturnType: (MethodReturnTypeFrom(node) if IsRegularMethod(node.NodeType) else null),
 							Modifiers: ModifiersFrom(node))
 #							MethodModifier: methodModi			fier)
+
+		converted.AddAnnotation (LocationOf (node))
+		converted.AddAnnotation (BodyRegionOf (node))
 							
 		for parameter in node.Parameters:
 			converted.Parameters.Add(ParameterFrom(converted, parameter))
@@ -190,11 +197,11 @@ class DomConversionVisitor(DepthFirstVisitor):
 		return modifiers
 		
 	def ParameterFrom(declaringMember as MethodDeclaration, parameter as Boo.Lang.Compiler.Ast.ParameterDeclaration):
-		return ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: ParameterTypeFrom (parameter.Type),
+		astParameter = ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: ParameterTypeFrom (parameter.Type),
 					Name: parameter.Name)
 #					DeclaringMember: declaringMember, 
-#					ReturnType: ParameterTypeFrom(parameter.Type),
-#					Location: LocationOf(parameter))
+		astParameter.AddAnnotation (LocationOf (parameter))
+		return astParameter
 					
 	virtual def MethodReturnTypeFrom(method as Method):
 		if method.ReturnType is not null:
@@ -265,9 +272,6 @@ class DomConversionVisitor(DepthFirstVisitor):
 	def BodyRegionOf(node as Node):
 		startLocation = TextLocation (DomLocationFrom(node.LexicalInfo).Line, int.MaxValue)
 		endLocation = TextLocation (DomLocationFrom(node.EndSourceLocation).Line, int.MaxValue)
-#		# Start/end at the ends of lines
-#		startLocation.Column = int.MaxValue
-#		endLocation.Column = int.MaxValue
 		return DomRegion(startLocation, endLocation)
 		
 	def LocationOf(node as Node):
