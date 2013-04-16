@@ -140,6 +140,12 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	def GetToken(context as CodeCompletionContext) as string:
 		return GetToken (DocumentLocation (context.TriggerLine, context.TriggerLineOffset))
 		
+	def GetNamespaces ():
+		unit = Document.ParsedDocument.GetAst of SyntaxTree ()
+		if (null == unit):
+			return List of AstNode ()
+		return unit.Children.Where ({ child | child isa NamespaceDeclaration })
+		
 	def AddGloballyVisibleAndImportedSymbolsTo(result as BooCompletionDataList):
 		ThreadPool.QueueUserWorkItem() do:
 			namespaces = Boo.Lang.List of string() { string.Empty }
@@ -148,6 +154,13 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			callback = def():
 				result.IsChanging = true
 				seen = {}
+				for node in GetNamespaces ():
+					ns = node as NamespaceDeclaration
+					if not ns.Name.Contains ("."):
+						result.Add (CompletionData (ns.Name, DataProvider.GetIconStringForNode (ns)))
+				for name in namespaces:
+					if not name.Contains ("."):
+						result.Add (CompletionData (name, "md-name-space"))
 				#for ns in namespaces:
 				#	for member in _dom.GetNamespaceContents(ns, true, true):
 				#		if member.Name in seen:
