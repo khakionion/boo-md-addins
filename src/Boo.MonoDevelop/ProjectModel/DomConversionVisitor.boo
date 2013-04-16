@@ -98,13 +98,13 @@ class DomConversionVisitor(DepthFirstVisitor):
 		field.AddAnnotation (BodyRegionOf (node))
 		_currentType.AddChild (field, SyntaxTree.MemberRole)
 							
-#	override def OnProperty(node as Property):
-#		if _currentType is null: return
-#		
-#		try:
-#			converted = DomProperty(
-#								Name: node.Name,
-#								ReturnType: ParameterTypeFrom(node.Type),
+	override def OnProperty(node as Property):
+		if _currentType is null: return
+		
+		try:
+			converted = PropertyDeclaration(
+								Name: node.Name,
+								ReturnType: ParameterTypeFrom(node.Type))
 #								Location: LocationOf(node),
 #								BodyRegion: BodyRegionOf(node),
 #								DeclaringType: _currentType)
@@ -116,11 +116,13 @@ class DomConversionVisitor(DepthFirstVisitor):
 #				converted.PropertyModifier |= PropertyModifier.HasSet
 #				converted.SetterModifier = ModifiersFrom(node.Setter)
 #				converted.SetRegion = BodyRegionOf(node.Setter)
-#								
-#			_currentType.Add(converted)
-#		except x:
-#			print x, x.InnerException
-#			
+			converted.AddAnnotation (LocationOf (node))
+			converted.AddAnnotation (BodyRegionOf (node))
+								
+			_currentType.AddChild (converted, SyntaxTree.MemberRole)
+		except x:
+			print x, x.InnerException
+			
 #	override def OnEvent(node as Event):
 #		if _currentType is null: return
 #		
