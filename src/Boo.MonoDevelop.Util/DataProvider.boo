@@ -73,19 +73,24 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 		return GetText (index)
 		
 	static def GetIconStringForNode (node as AstNode):
-		icon = "md-field"
+		icon = MonoDevelop.Ide.Gui.Stock.Literal
 		if (node isa TypeDeclaration):
-			icon = "md-class"
+			icon = MonoDevelop.Ide.Gui.Stock.Class
 		elif (node isa NamespaceDeclaration):
-			icon = "md-name-space"
+			icon = MonoDevelop.Ide.Gui.Stock.NameSpace
 		elif (node isa FieldDeclaration):
-			icon = "md-field"
+			icon = MonoDevelop.Ide.Gui.Stock.Field
 		elif (node isa PropertyDeclaration):
-			icon = "md-property"
+			icon = MonoDevelop.Ide.Gui.Stock.Property
 		elif (node isa MethodDeclaration):
-			icon = "md-method"
+			icon = MonoDevelop.Ide.Gui.Stock.Method
+		elif (node isa EventDeclaration):
+			icon = MonoDevelop.Ide.Gui.Stock.Event
+		elif (node isa DelegateDeclaration):
+			icon = MonoDevelop.Ide.Gui.Stock.Delegate
+		
 		return icon
-	
+
 	static def GetIconForNode (node as AstNode):
 		return ImageService.GetPixbuf(GetIconStringForNode (node), Gtk.IconSize.Menu)
 		
