@@ -123,17 +123,20 @@ class DomConversionVisitor(DepthFirstVisitor):
 		except x:
 			print x, x.InnerException
 			
-#	override def OnEvent(node as Event):
-#		if _currentType is null: return
-#		
-#		converted = DomEvent(
-#							Name: node.Name,
-#							ReturnType: ParameterTypeFrom(node.Type),
+	override def OnEvent(node as Event):
+		if _currentType is null: return
+		
+		converted = EventDeclaration (
+							Name: node.Name,
+							ReturnType: ParameterTypeFrom(node.Type))
 #							Location: LocationOf(node),
 #							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType)
-#		_currentType.Add(converted)
-#							
+		converted.AddAnnotation (LocationOf (node))
+		converted.AddAnnotation (BodyRegionOf (node))
+		
+		_currentType.AddChild (converted, SyntaxTree.MemberRole)
+							
 	override def OnEnumMember(node as EnumMember):
 		if _currentType is null: return
 		
