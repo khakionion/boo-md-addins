@@ -151,22 +151,22 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			namespaces = Boo.Lang.List of string() { string.Empty }
 			for ns in _index.ImportsFor(FileName, Text):
 				namespaces.AddUnique(ns)
+			for ns in GetNamespaces ().Select ({ ns | (ns as NamespaceDeclaration).Name }).Where ({ name | not name.Contains (".") }):
+				namespaces.AddUnique (ns)
+				
 			callback = def():
 				result.IsChanging = true
 				seen = {}
-				for node in GetNamespaces ():
-					ns = node as NamespaceDeclaration
-					if not ns.Name.Contains ("."):
-						result.Add (CompletionData (ns.Name, DataProvider.GetIconStringForNode (ns)))
-				for name in namespaces:
-					if not name.Contains ("."):
-						result.Add (CompletionData (name, "md-name-space"))
-				#for ns in namespaces:
-				#	for member in _dom.GetNamespaceContents(ns, true, true):
-				#		if member.Name in seen:
-				#			continue
-				#		seen.Add(member.Name, member)
-				#		result.Add(CompletionData(member.Name, member.StockIcon))
+				
+				for ns in namespaces:
+					if not ns.Contains ("."):
+						result.Add (CompletionData (ns, "md-name-space"))
+					for member in GetNamespaceContents(ns):
+						if member.Name in seen:
+							continue
+						seen.Add(member.Name, member)
+						result.Add(CompletionData(member.Name, IconForEntity (member.Entity)))
+						
 				result.IsChanging = false
 			DispatchService.GuiDispatch(callback)
 		return result
@@ -185,11 +185,11 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		nameSpace = matches.Groups[capture].Value
 		result = BooCompletionDataList()
 		seen = {}
-		#for member in _dom.GetNamespaceContents(nameSpace, true, true):
-		#	if member.Name in seen:
-		#		continue
-		#	seen.Add(member.Name, member)
-		#	result.Add(CompletionData(member.Name, member.StockIcon))
+		for member in GetNamespaceContents(nameSpace):
+			if member.Name in seen:
+				continue
+			seen.Add(member.Name, member)
+			result.Add(CompletionData(member.Name, IconForEntity (member.Entity)))
 		return result
 		
 	def CompleteMembers(context as CodeCompletionContext):
@@ -198,6 +198,10 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		                                    GetText (context.TriggerOffset, TextLength))
 		# print text
 		return CompleteMembersUsing(context, text, null)
+		
+	def GetNamespaceContents (namespaace as string):
+		text = string.Format ("{0}.{1}", namespaace, Boo.Ide.CursorLocation)
+		return _index.ProposalsFor (FileName, text)
 		
 	def CompleteMembersUsing(context as CodeCompletionContext, text as string, result as BooCompletionDataList):
 		if result is null: result = BooCompletionDataList()
