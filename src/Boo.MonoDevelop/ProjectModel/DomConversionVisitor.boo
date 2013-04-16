@@ -73,18 +73,27 @@ class DomConversionVisitor(DepthFirstVisitor):
 					
 		AddType(converted)
 		
-#	override def OnCallableDefinition(node as CallableDefinition):
+	override def OnCallableDefinition(node as CallableDefinition):
+		if _currentType is null: return
 #		parameters = System.Collections.Generic.List[of IParameter]()
 #		for p in node.Parameters: parameters.Add(ParameterFrom(null, p))
-#		
-#		converted = DomType.CreateDelegate(_result, node.Name, LocationOf(node), ReturnTypeFrom(node.ReturnType), parameters)
-#		converted.Modifiers = ModifiersFrom(node)
+		
+		converted = DelegateDeclaration (
+			Name: node.Name,
+			ReturnType: ReturnTypeFrom (node.ReturnType)
+		)
+#		_result, node.Name, LocationOf(node), ReturnTypeFrom(node.ReturnType), parameters)
+		converted.Modifiers = ModifiersFrom(node)
 #		converted.DeclaringType = _currentType
 #		converted.BodyRegion = BodyRegionOf(node)
-#		
+		converted.AddAnnotation (LocationOf (node))
+		converted.AddAnnotation (BodyRegionOf (node))
+		
 #		for p in parameters: p.DeclaringMember = converted
-#		
-#		AddType(converted)
+		for parameter in node.Parameters:
+			converted.Parameters.Add(ParameterFrom(parameter))
+		
+		_currentType.AddChild (converted, SyntaxTree.MemberRole)
 		
 	override def OnField(node as Field):
 		if _currentType is null: return
@@ -171,7 +180,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 		converted.AddAnnotation (BodyRegionOf (node))
 							
 		for parameter in node.Parameters:
-			converted.Parameters.Add(ParameterFrom(converted, parameter))
+			converted.Parameters.Add(ParameterFrom(parameter))
 		
 		_currentType.AddChild (converted, SyntaxTree.MemberRole)
 		
@@ -196,7 +205,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 		modifiers |= Modifiers.Sealed if node.IsFinal
 		return modifiers
 		
-	def ParameterFrom(declaringMember as MethodDeclaration, parameter as Boo.Lang.Compiler.Ast.ParameterDeclaration):
+	def ParameterFrom(parameter as Boo.Lang.Compiler.Ast.ParameterDeclaration):
 		astParameter = ICSharpCode.NRefactory.CSharp.ParameterDeclaration (Type: ParameterTypeFrom (parameter.Type),
 					Name: parameter.Name)
 #					DeclaringMember: declaringMember, 
