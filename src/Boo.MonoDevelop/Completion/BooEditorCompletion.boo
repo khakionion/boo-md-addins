@@ -163,21 +163,18 @@ class BooEditorCompletion(BooCompletionTextEditorExtension):
 		return null
 				
 	def CompleteNamespacePatterns(context as CodeCompletionContext):
-#		types = (MemberType.Namespace, MemberType.Type)
-#		for pattern in NAMESPACE_PATTERNS:
-#			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
-#			return completions if completions is not null
+		for pattern in NAMESPACE_PATTERNS:
+			completions = CompleteNamespacesForPattern(context, pattern, "namespace")
+			return completions if completions is not null
 			
 		return null
 		
 	def CompleteTypePatterns(context as CodeCompletionContext):
-#		types = (MemberType.Namespace, MemberType.Type)
-#		
-#		for pattern in TYPE_PATTERNS:
-#			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
-#			if completions is not null:
-#				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
-#				return completions
+		for pattern in TYPE_PATTERNS:
+			completions = CompleteNamespacesForPattern(context, pattern, "namespace")
+			if completions is not null:
+				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
+				return completions
 		return null
 			
 	override def ShouldEnableCompletionFor(fileName as string):
