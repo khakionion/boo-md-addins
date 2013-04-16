@@ -72,7 +72,7 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 	def GetMarkup(index as int) as string:
 		return GetText (index)
 		
-	static def GetIconForNode (node as AstNode):
+	static def GetIconStringForNode (node as AstNode):
 		icon = "md-field"
 		if (node isa TypeDeclaration):
 			icon = "md-class"
@@ -84,7 +84,10 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 			icon = "md-property"
 		elif (node isa MethodDeclaration):
 			icon = "md-method"
-		return ImageService.GetPixbuf(icon, Gtk.IconSize.Menu)
+		return icon
+	
+	static def GetIconForNode (node as AstNode):
+		return ImageService.GetPixbuf(GetIconStringForNode (node), Gtk.IconSize.Menu)
 		
 	def GetIcon(index as int) as Gdk.Pixbuf:
 		return GetIconForNode (_memberList[index])
