@@ -16,7 +16,6 @@ class UnityScriptParser(AbstractTypeSystemParser):
 	public static final MimeType = "text/x-unityscript"
 	
 	def constructor():
-		# super("UnityScript", MimeType)
 		super()
 		
 #	override def CanParse(fileName as string):
@@ -24,15 +23,12 @@ class UnityScriptParser(AbstractTypeSystemParser):
 		
 	override def Parse(storeAst as bool, fileName as string, reader as TextReader, project as Project):
 		result = ParseUnityScript(fileName, reader.ReadToEnd ())
+		document = DefaultParsedDocument(fileName, Ast: SyntaxTree (FileName: fileName))
 		
-		document = DefaultParsedDocument(fileName)
-#		document.CompilationUnit = CompilationUnit(fileName)
-#		if dom is null: return document
-#		
-#		try:
-#			result.CompileUnit.Accept(DomConversionVisitor(document.CompilationUnit))
-#		except e:
-#			LogError e
+		try:
+			result.CompileUnit.Accept(DomConversionVisitor(document.GetAst of SyntaxTree ()))
+		except e:
+			LogError e
 		
 		return document
 		

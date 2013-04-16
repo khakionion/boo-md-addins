@@ -4,9 +4,10 @@ import System.Linq
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.CodeCompletion
 import ICSharpCode.NRefactory.Completion
+import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class UnityScriptParameterDataProvider(IParameterDataProvider):
+class UnityScriptParameterDataProvider(IParameterDataProvider, IParameterCompletionDataFactory):
 	_methods as List of MethodDescriptor
 	_document as Document
 	
@@ -14,8 +15,11 @@ class UnityScriptParameterDataProvider(IParameterDataProvider):
 		_methods = methods
 		_document = document
 		
-	OverloadCount:
+	Count:
 		get: return _methods.Count
+
+	StartOffset:
+		get: return 0
 
 	def GetCurrentParameterIndex(widget as ICompletionWidget, context as CodeCompletionContext):
 		line = _document.Editor.GetLineText(context.TriggerLine)
@@ -30,15 +34,23 @@ class UnityScriptParameterDataProvider(IParameterDataProvider):
 				return /,/.Split(line[0:offset+1]).Length
 		return -1
 
-
+	def GetHeading (overloadIndex as int, parameterMarkup as (string), currentParameterIndex as int):
+		return GetMethodMarkup (overloadIndex, parameterMarkup, currentParameterIndex)
+		
 	def GetMethodMarkup(overloadIndex as int, parameterMarkup as (string), currentParameterIndex as int):
 		method = _methods[overloadIndex]
 		methodName = System.Security.SecurityElement.Escape(method.Name)
 		methodReturnType = System.Security.SecurityElement.Escape(method.ReturnType)
 		return "${methodName}(${string.Join(',',parameterMarkup)}): ${methodReturnType}"
 		
+	def GetParameterDescription (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
+	
+	def GetDescription (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
+		
 	def GetParameterMarkup(overloadIndex as int, parameterIndex as int):
-		return Enumerable.ElementAt(_methods[overloadIndex].Arguments, parameterIndex)
+		return Enumerable.ElementAt(_methods[overloadIndex].Arguments, parameterIndex).Replace (" as ", ": ")
 		
 	def GetParameterCount(overloadIndex as int):
 		return Enumerable.Count(_methods[overloadIndex].Arguments)

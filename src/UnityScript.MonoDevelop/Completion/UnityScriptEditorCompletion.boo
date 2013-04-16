@@ -106,19 +106,16 @@ class UnityScriptEditorCompletion(BooCompletionTextEditorExtension):
 		super()
 		
 	def InstallUnityScriptSyntaxModeIfNeeded():
-		pass
-		# view = Document.GetContent[of MonoDevelop.SourceEditor.SourceEditorView]()
-		# return if view is null
-		# 
-		# mimeType = UnityScript.MonoDevelop.ProjectModel.UnityScriptParser.MimeType
-		# syntaxMode = view.Document.SyntaxMode as SyntaxMode
-		# return if syntaxMode != null and syntaxMode.MimeType == mimeType
-		# 
-		# mode = Mono.TextEditor.Highlighting.SyntaxModeService.GetSyntaxMode (view.Document, mimeType)
-		# if mode is not null:
-		# 	view.Document.SyntaxMode = mode
-		# else:
-		# 	LoggingService.LogWarning(GetType() + " could not get SyntaxMode for mimetype '" + mimeType + "'.")
+		doc = Document.Editor.Document
+		mimeType = UnityScript.MonoDevelop.ProjectModel.UnityScriptParser.MimeType
+		syntaxMode = doc.SyntaxMode as SyntaxMode
+		return if syntaxMode != null and syntaxMode.MimeType == mimeType
+		
+		mode = Mono.TextEditor.Highlighting.SyntaxModeService.GetSyntaxMode (doc, mimeType)
+		if mode is not null:
+			doc.SyntaxMode = mode
+		else:
+			LoggingService.LogWarning(GetType() + " could not get SyntaxMode for mimetype '" + mimeType + "'.")
 	
 #	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char):
 #		triggerWordLength = 0
@@ -162,23 +159,18 @@ class UnityScriptEditorCompletion(BooCompletionTextEditorExtension):
 		return null
 		
 	def CompleteNamespacePatterns(context as CodeCompletionContext):
-#		completions as CompletionDataList = null
-#		types = (MemberType.Namespace,)
-#		
-#		for pattern in NAMESPACE_PATTERNS:
-#			return completions if (null != (completions = CompleteNamespacesForPattern(context, pattern,
-#			                                              "namespace", types)))
+		completions as CompletionDataList = null
+		
+		for pattern in NAMESPACE_PATTERNS:
+			return completions if (null != (completions = CompleteNamespacesForPattern(context, pattern, "namespace")))
 		return null
 		
 	def CompleteTypePatterns(context as CodeCompletionContext):
-#		types = (MemberType.Namespace, MemberType.Type)
-#		
-#		completions as CompletionDataList
-#		for pattern in TYPE_PATTERNS:
-#			
-#			if (null != (completions = CompleteNamespacesForPattern(context, pattern, "namespace", types))):
-#				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
-#				return completions
+		completions as CompletionDataList
+		for pattern in TYPE_PATTERNS:
+			if (null != (completions = CompleteNamespacesForPattern(context, pattern, "namespace"))):
+				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
+				return completions
 		return null
 			
 	override def ShouldEnableCompletionFor(fileName as string):
