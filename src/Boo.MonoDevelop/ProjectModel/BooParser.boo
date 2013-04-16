@@ -22,7 +22,7 @@ class BooParser(AbstractTypeSystemParser):
 		_compiler.Parameters.Pipeline = pipeline
 		
 	override def Parse(storeAst as bool, fileName as string, reader as TextReader, project as Project):
-		LoggingService.LogError ("Parsing {0}", fileName)
+#		LoggingService.LogError ("Parsing {0}", fileName)
 		document = DefaultParsedDocument(fileName, Ast: SyntaxTree (FileName: fileName))
 		
 		try:

@@ -35,7 +35,6 @@ class DomConversionVisitor(DepthFirstVisitor):
 		
 	override def OnNamespaceDeclaration(node as Boo.Lang.Compiler.Ast.NamespaceDeclaration):
 		_namespace = node.Name
-#		region = BodyRegionOf(node.ParentNode)
 #		domUsing = UsingStatement ()
 #		domUsing = DomUsing(IsFromNamespace: true, Region: region)
 		astNamespace = ICSharpCode.NRefactory.CSharp.NamespaceDeclaration (Name: _namespace)
@@ -59,7 +58,7 @@ class DomConversionVisitor(DepthFirstVisitor):
 		OnTypeDefinition(node, ClassType.Enum)
 		
 	def OnTypeDefinition(node as TypeDefinition, classType as ClassType):
-		LoggingService.LogError ("Found type {0}", node.FullName)
+#		LoggingService.LogError ("Found type {0}", node.FullName)
 		converted = TypeDeclaration (
 						Name: node.Name,
 						ClassType: classType,
@@ -93,8 +92,6 @@ class DomConversionVisitor(DepthFirstVisitor):
 		field = FieldDeclaration(
 							Name: node.Name,
 							ReturnType: ParameterTypeFrom(node.Type),
-#							Location: LocationOf(node),
-#							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType,
 							Modifiers: ModifiersFrom(node))
 		field.AddAnnotation (LocationOf (node))
@@ -160,12 +157,9 @@ class DomConversionVisitor(DepthFirstVisitor):
 		
 		converted = MethodDeclaration (
 							Name: node.Name,
-#							Location: LocationOf(node),
-#							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType,
 							ReturnType: (MethodReturnTypeFrom(node) if IsRegularMethod(node.NodeType) else null),
 							Modifiers: ModifiersFrom(node))
-#							MethodModifier: methodModi			fier)
 
 		converted.AddAnnotation (LocationOf (node))
 		converted.AddAnnotation (BodyRegionOf (node))
