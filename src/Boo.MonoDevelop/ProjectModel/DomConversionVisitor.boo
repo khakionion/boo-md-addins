@@ -153,7 +153,8 @@ class DomConversionVisitor(DepthFirstVisitor):
 		OnMethodImpl(node)
 		
 	def OnMethodImpl(node as Method):
-		if _currentType is null: return
+		if _currentType is null or node.ParentNode isa Property:
+			return
 		
 		converted = MethodDeclaration (
 							Name: node.Name,
