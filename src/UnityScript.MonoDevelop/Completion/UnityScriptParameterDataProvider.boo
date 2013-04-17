@@ -7,7 +7,7 @@ import ICSharpCode.NRefactory.Completion
 import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class UnityScriptParameterDataProvider(IParameterDataProvider, IParameterCompletionDataFactory):
+class UnityScriptParameterDataProvider(ParameterDataProvider, IParameterCompletionDataFactory):
 	_methods as List of MethodDescriptor
 	_document as Document
 	
@@ -17,9 +17,6 @@ class UnityScriptParameterDataProvider(IParameterDataProvider, IParameterComplet
 		
 	Count:
 		get: return _methods.Count
-
-	StartOffset:
-		get: return 0
 
 	def GetCurrentParameterIndex(widget as ICompletionWidget, context as CodeCompletionContext):
 		line = _document.Editor.GetLineText(context.TriggerLine)
@@ -42,7 +39,10 @@ class UnityScriptParameterDataProvider(IParameterDataProvider, IParameterComplet
 		methodName = System.Security.SecurityElement.Escape(method.Name)
 		methodReturnType = System.Security.SecurityElement.Escape(method.ReturnType)
 		return "${methodName}(${string.Join(',',parameterMarkup)}): ${methodReturnType}"
-		
+
+	def GetParameterName (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
+				
 	def GetParameterDescription (overloadIndex as int, parameterIndex as int):
 		return GetParameterMarkup (overloadIndex, parameterIndex)
 	

@@ -8,7 +8,7 @@ import ICSharpCode.NRefactory.Completion
 import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class BooParameterDataProvider(IParameterDataProvider, IParameterCompletionDataFactory):
+class BooParameterDataProvider(ParameterDataProvider, IParameterCompletionDataFactory):
 	_methods as List of MethodDescriptor
 	_document as Document
 	
@@ -19,9 +19,6 @@ class BooParameterDataProvider(IParameterDataProvider, IParameterCompletionDataF
 	Count:
 		get: return _methods.Count
 		
-	StartOffset:
-		get: return 0
-
 	def GetCurrentParameterIndex(widget as ICompletionWidget, context as CodeCompletionContext):
 		line = _document.Editor.GetLineText(context.TriggerLine)
 		offset = _document.Editor.Caret.Column-2
@@ -42,6 +39,9 @@ class BooParameterDataProvider(IParameterDataProvider, IParameterCompletionDataF
 		methodName = System.Security.SecurityElement.Escape(_methods[overloadIndex].Name)
 		methodReturnType = System.Security.SecurityElement.Escape(_methods[overloadIndex].ReturnType)
 		return "${methodName}(${string.Join(',',parameterMarkup)}) as ${methodReturnType}"
+		
+	def GetParameterName (overloadIndex as int, parameterIndex as int):
+		return GetParameterMarkup (overloadIndex, parameterIndex)
 		
 	def GetParameterDescription (overloadIndex as int, parameterIndex as int):
 		return GetParameterMarkup (overloadIndex, parameterIndex)
