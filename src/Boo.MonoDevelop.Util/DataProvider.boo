@@ -36,7 +36,8 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 	def Reset():
 		_memberList.Clear()
 		if(_tag isa SyntaxTree):
-			types = Stack of TypeDeclaration((_tag as SyntaxTree).GetTypes (false))
+			foundTypes = (_tag as SyntaxTree).GetTypes (false) as IEnumerable of EntityDeclaration
+			types = Stack of EntityDeclaration((_tag as SyntaxTree).GetTypes (false))
 			while(types.Count > 0):
 				type = types.Pop()
 				_memberList.Add(type)
