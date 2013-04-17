@@ -59,7 +59,10 @@ class DataProvider(DropDownBoxListWindow.IListDataProvider):
 				node = node.Parent
 				sb.Insert (0, (node as TypeDeclaration).Name + ".")
 			return sb.ToString ()
-			
+		if node isa FieldDeclaration:
+			return (node as FieldDeclaration).Variables.First ().Name
+		if node isa EventDeclaration:
+			return (node as EventDeclaration).Variables.First ().Name
 		if (node isa EntityDeclaration):
 			return (node as EntityDeclaration).Name
 		if (node isa VariableInitializer):

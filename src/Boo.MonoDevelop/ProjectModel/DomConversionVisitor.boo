@@ -99,10 +99,11 @@ class DomConversionVisitor(DepthFirstVisitor):
 		if _currentType is null: return
 		
 		field = FieldDeclaration(
-							Name: node.Name,
+#							Name: node.Name,
 							ReturnType: ParameterTypeFrom(node.Type),
 #							DeclaringType: _currentType,
 							Modifiers: ModifiersFrom(node))
+		field.AddChild (VariableInitializer (node.Name, null), Roles.Variable)
 		field.AddAnnotation (LocationOf (node))
 		field.AddAnnotation (BodyRegionOf (node))
 		_currentType.AddChild (field, SyntaxTree.MemberRole)
@@ -136,11 +137,12 @@ class DomConversionVisitor(DepthFirstVisitor):
 		if _currentType is null: return
 		
 		converted = EventDeclaration (
-							Name: node.Name,
+#							Name: node.Name,
 							ReturnType: ParameterTypeFrom(node.Type))
 #							Location: LocationOf(node),
 #							BodyRegion: BodyRegionOf(node),
 #							DeclaringType: _currentType)
+		converted.AddChild (VariableInitializer (node.Name, null), Roles.Variable)
 		converted.AddAnnotation (LocationOf (node))
 		converted.AddAnnotation (BodyRegionOf (node))
 		
@@ -150,9 +152,10 @@ class DomConversionVisitor(DepthFirstVisitor):
 		if _currentType is null: return
 		
 		field = FieldDeclaration(
-							Name: node.Name,
+#							Name: node.Name,
 #							DeclaringType: _currentType,
 							Modifiers: ModifiersFrom(node))
+		field.AddChild (VariableInitializer (node.Name, null), Roles.Variable)
 		field.AddAnnotation (LocationOf (node))
 		field.AddAnnotation (BodyRegionOf (node))
 		_currentType.AddChild (field, SyntaxTree.MemberRole)
