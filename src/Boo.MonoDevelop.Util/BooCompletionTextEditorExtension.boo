@@ -149,18 +149,23 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	def AddGloballyVisibleAndImportedSymbolsTo(result as BooCompletionDataList):
 		ThreadPool.QueueUserWorkItem() do:
 			namespaces = Boo.Lang.List of string() { string.Empty }
+			rootNamespaces = Boo.Lang.List of string () { string.Empty }
+			
 			for ns in _index.ImportsFor(FileName, Text):
 				namespaces.AddUnique(ns)
-			for ns in GetNamespaces ().Select ({ ns | (ns as NamespaceDeclaration).Name }).Where ({ name | not name.Contains (".") }):
+				rootNamespaces.AddUnique (ns.Split ((".",), StringSplitOptions.None)[0])
+			for ns in GetNamespaces ().Select ({ ns | (ns as NamespaceDeclaration).Name }):
 				namespaces.AddUnique (ns)
+				rootNamespaces.AddUnique (ns.Split ((".",), StringSplitOptions.None)[0])
 				
 			callback = def():
 				result.IsChanging = true
 				seen = {}
 				
+				for ns in rootNamespaces:
+					result.Add (CompletionData (ns, MonoDevelop.Ide.Gui.Stock.NameSpace))
+				
 				for ns in namespaces:
-					if not ns.Contains ("."):
-						result.Add (CompletionData (ns, "md-name-space"))
 					for member in GetNamespaceContents(ns):
 						if member.Name in seen:
 							continue
