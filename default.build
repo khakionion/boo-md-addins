@@ -376,6 +376,8 @@
 				<include name="Mono.Cecil.dll" />
 				<include name="Mono.Cecil.Mdb.dll" />
 				<include name="Mono.Debugging.dll" />
+				<include name="Xwt.dll" />
+				<include name="Xwt.Gtk.dll" />
 				<include name="../AddIns/DisplayBindings/SourceEditor/MonoDevelop.SourceEditor2.dll" />
 				<include name="../AddIns/MonoDevelop.DesignerSupport/MonoDevelop.DesignerSupport.dll" />
 				<include name="../AddIns/MonoDevelop.Refactoring/MonoDevelop.Refactoring.dll" />
