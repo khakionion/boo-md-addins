@@ -13,7 +13,7 @@ import Boo.Lang.Compiler
 
 import Boo.MonoDevelop.Util
 
-class BooParser(AbstractTypeSystemParser):
+class BooParser(TypeSystemParser):
 	
 	_compiler = Boo.Lang.Compiler.BooCompiler()
 	

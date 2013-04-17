@@ -11,7 +11,7 @@ import ICSharpCode.NRefactory.CSharp
 import Boo.MonoDevelop.Util
 import UnityScript.MonoDevelop
 
-class UnityScriptParser(AbstractTypeSystemParser):
+class UnityScriptParser(TypeSystemParser):
 	
 	public static final MimeType = "text/x-unityscript"
 	
