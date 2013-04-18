@@ -1,5 +1,6 @@
 namespace Boo.MonoDevelop.Completion
 
+import System
 import System.Linq
 
 import MonoDevelop.Ide.Gui
@@ -55,3 +56,14 @@ class BooParameterDataProvider(ParameterDataProvider):
 	def GetParameterCount(overloadIndex as int):
 		return Enumerable.Count(_methods[overloadIndex].Arguments)
 		
+	def AllowParameterList (overloadIndex as int):
+		return true
+		
+	override def CreateTooltipInformation (overloadIndex as int, parameterIndex as int, smartWrap as bool) as TooltipInformation:
+		info = TooltipInformation ()
+		parameterMarkup = System.Collections.Generic.List of string ()
+		for i in range(0, GetParameterCount (overloadIndex), 1):
+			parameterMarkup.Add (GetParameterMarkup (overloadIndex, i))
+		info.SignatureMarkup = GetMethodMarkup (overloadIndex, parameterMarkup.ToArray (), parameterIndex)
+		return info
+
