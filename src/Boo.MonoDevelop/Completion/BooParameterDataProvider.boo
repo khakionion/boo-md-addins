@@ -8,7 +8,7 @@ import ICSharpCode.NRefactory.Completion
 import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class BooParameterDataProvider(ParameterDataProvider, IParameterCompletionDataFactory):
+class BooParameterDataProvider(ParameterDataProvider):
 	_methods as List of MethodDescriptor
 	_document as Document
 	

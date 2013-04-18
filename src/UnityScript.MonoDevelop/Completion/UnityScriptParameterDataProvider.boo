@@ -7,7 +7,7 @@ import ICSharpCode.NRefactory.Completion
 import ICSharpCode.NRefactory.CSharp.Completion
 import Boo.Ide
 
-class UnityScriptParameterDataProvider(ParameterDataProvider, IParameterCompletionDataFactory):
+class UnityScriptParameterDataProvider(ParameterDataProvider):
 	_methods as List of MethodDescriptor
 	_document as Document
 	
