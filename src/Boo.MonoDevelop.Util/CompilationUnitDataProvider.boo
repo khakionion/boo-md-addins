@@ -5,9 +5,9 @@ import System.Linq.Enumerable
 
 import MonoDevelop.Ide
 import MonoDevelop.Ide.Gui
+import MonoDevelop.Ide.TypeSystem
 import MonoDevelop.Ide.Gui.Content
 import MonoDevelop.Components
-import MonoDevelop.Projects.Dom
 
 class CompilationUnitDataProvider(DropDownBoxListWindow.IListDataProvider):
 	private _document as Document
@@ -41,7 +41,7 @@ class CompilationUnitDataProvider(DropDownBoxListWindow.IListDataProvider):
 		region = WorkaroundElementAt(_document.ParsedDocument.UserRegions, position) as FoldingRegion
 		editor = _document.GetContent of IExtensibleTextEditor()
 		if(editor != null):
-			editor.SetCaretTo(Math.Max(1, region.Region.Start.Line), region.Region.Start.Column)
+			editor.SetCaretTo(Math.Max(1, region.Region.BeginLine), region.Region.BeginColumn)
 			
 	def Reset():
 		pass

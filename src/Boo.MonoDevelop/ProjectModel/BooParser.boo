@@ -3,45 +3,41 @@ namespace Boo.MonoDevelop.ProjectModel
 import System
 import System.IO
 
-import MonoDevelop.Projects.Dom
-import MonoDevelop.Projects.Dom.Parser
+import MonoDevelop.Projects
+import MonoDevelop.Core
+import MonoDevelop.Ide.TypeSystem
+
+import ICSharpCode.NRefactory.CSharp
 
 import Boo.Lang.Compiler
 
 import Boo.MonoDevelop.Util
 
-class BooParser(AbstractParser):
+class BooParser(TypeSystemParser):
 	
 	_compiler = Boo.Lang.Compiler.BooCompiler()
 	
 	def constructor():
-		# super("Boo", BooMimeType)
-		super()
 		pipeline = CompilerPipeline() { Steps.IntroduceModuleClasses() }
 		_compiler.Parameters.Pipeline = pipeline
 		
-	override def CanParse(fileName as string):
-		return Path.GetExtension(fileName).ToLower() == ".boo"
-		
-	override def Parse(dom as ProjectDom, fileName as string, content as string):
-		document = ParsedDocument(fileName)
-		if(null == document.CompilationUnit):
-			document.CompilationUnit = CompilationUnit(fileName)
-		if dom is null: return document
+	override def Parse(storeAst as bool, fileName as string, reader as TextReader, project as Project):
+#		LoggingService.LogError ("Parsing {0}", fileName)
+		document = DefaultParsedDocument(fileName, Ast: SyntaxTree (FileName: fileName))
 		
 		try:
-			index = ProjectIndexFactory.ForProject(dom.Project)
+			index = ProjectIndexFactory.ForProject(project)
 			assert index is not null
-			module = index.Parse(fileName, content)
-			IntroduceModuleClasses(module).Accept(DomConversionVisitor(document.CompilationUnit))
+			module = index.Parse(fileName, reader.ReadToEnd ())
+			IntroduceModuleClasses(module).Accept(DomConversionVisitor(document.GetAst of SyntaxTree ()))
 		except e:
-			LogError e
+			LoggingService.LogError ("Parse error", e)
 		
 		return document
 		
-	override def CreateResolver(dom as ProjectDom, editor, fileName as string):
-		doc = cast(MonoDevelop.Ide.Gui.Document, editor)
-		return BooResolver(dom, doc.CompilationUnit, fileName)
+#	override def CreateResolver(dom as SyntaxTree, editor, fileName as string):
+#		doc = cast(MonoDevelop.Ide.Gui.Document, editor)
+#		return BooResolver(dom, doc.CompilationUnit, fileName)
 		
 	private def IntroduceModuleClasses(module as Ast.Module):
 		return _compiler.Run(Ast.CompileUnit(module.CloneNode())).CompileUnit

@@ -27,9 +27,11 @@
 	</Runtime>
 
 	<Dependencies>
-		<Addin id="Ide" version="2.8"/>
-		<Addin id="Core" version="2.8" />
-		<Addin id="SourceEditor2" version="2.8" />
+		<Addin id = "Core" version = "4.0.1"/>
+		<Addin id = "Ide" version = "4.0.1"/>
+		<Addin id = "SourceEditor2" version = "4.0.1" />
+		<Addin id = "DesignerSupport" version = "4.0.1" />
+		<Addin id = "Refactoring" version = "4.0.1" />	
 	</Dependencies>
 	
 	<Extension path="/MonoDevelop/Core/SupportPackages">
@@ -76,6 +78,7 @@
 	<Extension path = "/MonoDevelop/Core/MimeTypes">
 		<MimeType id="text/x-unityscript" _description="UnityScript source code" icon="md-unityscript-file" isText="true">
 			<File pattern="*.us" />
+			<File pattern="*.js" />
 		</MimeType>
 	</Extension>
 
@@ -93,9 +96,13 @@
 		<Class class = "UnityScript.MonoDevelop.Completion.UnityScriptEditorCompletion" />
 	</Extension>
 	
-	<Extension path = "/MonoDevelop/ProjectModel/DomParser">
-		<Parser fileExtensions = ".js" id = "UnityScriptParserJS" class = "UnityScript.MonoDevelop.ProjectModel.UnityScriptParser" />
-		<Parser fileExtensions = ".us" id = "UnityScriptParserUS" class = "UnityScript.MonoDevelop.ProjectModel.UnityScriptParser" />
+	<Extension path = "/MonoDevelop/TypeSystem/Parser">
+		<Parser mimeType = "text/x-unityscript"
+			class = "UnityScript.MonoDevelop.ProjectModel.UnityScriptParser" />
+		<Parser mimeType = "text/x-javascript"
+			class = "UnityScript.MonoDevelop.ProjectModel.UnityScriptParser" />
+		<Parser mimeType = "application/javascript"
+			class = "UnityScript.MonoDevelop.ProjectModel.UnityScriptParser" />
 	</Extension>
 	
 	<Extension path="/MonoDevelop/SourceEditor2/ContextMenu/Editor">
