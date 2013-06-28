@@ -23,8 +23,8 @@ class BooCompletionDataList(CompletionDataList, IMutableCompletionDataList):
 		pass
 
 	protected virtual def OnChanging(sender, args as EventArgs):
-		Changing(sender, args)
+		Gtk.Application.Invoke ({ Changing (sender, args) })
 
 	protected virtual def OnChanged(sender, args as EventArgs):
-		Changed(sender, args)
+		Gtk.Application.Invoke ({ Changed (sender, args) })
 		

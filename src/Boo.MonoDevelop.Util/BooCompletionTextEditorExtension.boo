@@ -13,23 +13,27 @@ import Boo.Lang.Compiler.TypeSystem
 
 import Mono.TextEditor
 import MonoDevelop.Projects
-import MonoDevelop.Projects.Dom
-import MonoDevelop.Projects.Dom.Output
-import MonoDevelop.Projects.Dom.Parser 
 import MonoDevelop.Ide
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.Gui.Content
 import MonoDevelop.Ide.CodeCompletion
+import MonoDevelop.Ide.TypeSystem
 import MonoDevelop.Core
 import MonoDevelop.Components
 import MonoDevelop.Components.Commands
+
+import ICSharpCode.NRefactory
+import ICSharpCode.NRefactory.TypeSystem
+import ICSharpCode.NRefactory.CSharp
+import ICSharpCode.NRefactory.CSharp.Completion
+import ICSharpCode.NRefactory.CSharp.TypeSystem
 
 import Boo.Ide
 import Boo.MonoDevelop.Util
 
 class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocument):
 	
-	_dom as ProjectDom
+	_dom as SyntaxTree
 	_project as DotNetProject
 	_index as ProjectIndex
 	
@@ -43,7 +47,8 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	
 	override def Initialize():
 		super()
-		_dom = ProjectDomService.GetProjectDom(Document.Project) or ProjectDomService.GetFileDom(FileName)
+		if (document.ParsedDocument):
+			_dom = document.ParsedDocument.GetAst of SyntaxTree ();
 		_project = Document.Project as DotNetProject
 		_index = ProjectIndexFor(_project)
 		textEditorData = Document.Editor
@@ -54,7 +59,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	abstract def ShouldEnableCompletionFor(fileName as string) as bool:
 		pass
 		
-	abstract def GetParameterDataProviderFor(methods as Boo.Lang.List of MethodDescriptor) as IParameterDataProvider:
+	abstract def GetParameterDataProviderFor(methods as Boo.Lang.List of MethodDescriptor) as ParameterDataProvider:
 		pass
 		
 	abstract SelfReference as string:
@@ -102,7 +107,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		
 	override def CodeCompletionCommand(context as CodeCompletionContext):
 		pos = context.TriggerOffset
-		list = HandleCodeCompletion(context, GetText(pos-1, pos)[0])
+		list = HandleCodeCompletion(context, GetText(pos-1, pos)[0], pos)
 		if list is not null:
 			return list
 		return CompleteVisible(context)
@@ -135,26 +140,44 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 	def GetToken(context as CodeCompletionContext) as string:
 		return GetToken (DocumentLocation (context.TriggerLine, context.TriggerLineOffset))
 		
+	def GetNamespaces ():
+		unit = Document.ParsedDocument.GetAst of SyntaxTree ()
+		if (null == unit):
+			return List of AstNode ()
+		return unit.Children.Where ({ child | child isa NamespaceDeclaration })
+		
 	def AddGloballyVisibleAndImportedSymbolsTo(result as BooCompletionDataList):
 		ThreadPool.QueueUserWorkItem() do:
 			namespaces = Boo.Lang.List of string() { string.Empty }
+			rootNamespaces = Boo.Lang.List of string () { string.Empty }
+			
 			for ns in _index.ImportsFor(FileName, Text):
 				namespaces.AddUnique(ns)
+				rootNamespaces.AddUnique (ns.Split ((".",), StringSplitOptions.None)[0])
+			for ns in GetNamespaces ().Select ({ ns | (ns as NamespaceDeclaration).Name }):
+				namespaces.AddUnique (ns)
+				rootNamespaces.AddUnique (ns.Split ((".",), StringSplitOptions.None)[0])
+				
 			callback = def():
 				result.IsChanging = true
 				seen = {}
+				
+				for ns in rootNamespaces:
+					result.Add (CompletionData (ns, MonoDevelop.Ide.Gui.Stock.NameSpace))
+				
 				for ns in namespaces:
-					for member in _dom.GetNamespaceContents(ns, true, true):
+					for member in GetNamespaceContents(ns):
 						if member.Name in seen:
 							continue
 						seen.Add(member.Name, member)
-						result.Add(CompletionData(member.Name, member.StockIcon))
+						result.Add(CompletionData(member.Name, IconForEntity (member.Entity)))
+						
 				result.IsChanging = false
 			DispatchService.GuiDispatch(callback)
 		return result
 		
 	virtual def CompleteNamespacesForPattern(context as CodeCompletionContext, pattern as Regex, \
-		                                     capture as string, filterMatches as MonoDevelop.Projects.Dom.MemberType*):
+		                                     capture as string):
 		lineText = GetLineText(context.TriggerLine)
 		matches = pattern.Match(lineText)
 		
@@ -167,13 +190,11 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		nameSpace = matches.Groups[capture].Value
 		result = BooCompletionDataList()
 		seen = {}
-		for member in _dom.GetNamespaceContents(nameSpace, true, true):
+		for member in GetNamespaceContents(nameSpace):
 			if member.Name in seen:
 				continue
-			if member.MemberType not in filterMatches:
-				continue
 			seen.Add(member.Name, member)
-			result.Add(CompletionData(member.Name, member.StockIcon))
+			result.Add(CompletionData(member.Name, IconForEntity (member.Entity)))
 		return result
 		
 	def CompleteMembers(context as CodeCompletionContext):
@@ -182,6 +203,10 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		                                    GetText (context.TriggerOffset, TextLength))
 		# print text
 		return CompleteMembersUsing(context, text, null)
+		
+	def GetNamespaceContents (namespaace as string):
+		text = string.Format ("{0}.{1}", namespaace, Boo.Ide.CursorLocation)
+		return _index.ProposalsFor (FileName, text)
 		
 	def CompleteMembersUsing(context as CodeCompletionContext, text as string, result as BooCompletionDataList):
 		if result is null: result = BooCompletionDataList()
@@ -193,8 +218,8 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		
 	def CompleteVisible(context as CodeCompletionContext):
 		completions = BooCompletionDataList(IsChanging: true, AutoSelect: false)
-		completions.AddRange(CompletionData(k, Stock.Literal) for k in Keywords)
-		completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
+		completions.AddRange(CompletionData(k, MonoDevelop.Ide.Gui.Stock.Literal) for k in Keywords)
+		completions.AddRange(CompletionData(p, MonoDevelop.Ide.Gui.Stock.Literal) for p in Primitives)
 		text = string.Format ("{0}{1}.{2}{3} {4}", GetText (0, context.TriggerOffset-1),
 		                                    SelfReference, Boo.Ide.CursorLocation, EndStatement,
 		                                    GetText (context.TriggerOffset+1, TextLength))
@@ -212,7 +237,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			else:
 				callback = def():
 					completions.IsChanging = true
-					completions.AddRange(CompletionData(local, Stock.Field) for local in locals)
+					completions.AddRange(CompletionData(local, MonoDevelop.Ide.Gui.Stock.Field) for local in locals)
 					completions.IsChanging = false
 			DispatchService.GuiDispatch(callback)
 		ThreadPool.QueueUserWorkItem (work)
@@ -272,11 +297,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			return null
 		
 		tag = path[index].Tag
-		provider = null
-		if(tag isa ICompilationUnit):
-			provider = CompilationUnitDataProvider(Document)
-		else:
-			provider = DataProvider(Document, tag, GetAmbience())
+		provider = DataProvider(Document, tag, GetAmbience())
 			
 		window = DropDownBoxListWindow(provider)
 		window.SelectItem(tag)
@@ -286,50 +307,74 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		if(PathChanged != null):
 			PathChanged(self, args)
 			
+	def GetTypeAt (unit as SyntaxTree, location as TextLocation):
+		types = unit.GetTypes (true).Where ({type | (type.Annotation (DomRegion) cast DomRegion).IsInside (TextLocation (location.Line+1, location.Column))})
+		found = types.FirstOrDefault ()
+		foundLine = -1
+		
+		if 1 < types.Count ():
+			for type in types:
+				if ((type.Annotation (DomRegion) cast DomRegion).BeginLine > foundLine):
+					found = type
+					foundLine = (type.Annotation (DomRegion) cast DomRegion).BeginLine
+		
+		return found
+		
+	def GetMemberAt (type as TypeDeclaration, location as TextLocation):
+		members = type.GetChildrenByRole (SyntaxTree.MemberRole)
+		found = null
+		foundLine = -1
+		
+		for member in members:
+			local = member.Annotation (TextLocation)
+			if null != local and location.Line == (local cast TextLocation).Line:
+				return member
+			region = member.Annotation (DomRegion)
+			if null != region and (region cast DomRegion).IsInside (location):
+				if null == found or (region cast DomRegion).BeginLine > foundLine:
+					found = member
+					foundLine = (region cast DomRegion).BeginLine
+		return found
+			
 	def UpdatePath(sender as object, args as Mono.TextEditor.DocumentLocationEventArgs):
-		unit = Document.CompilationUnit
+		if (Document == null):
+			LoggingService.LogError ("Document is null!")
+			return
+		if (Document.ParsedDocument == null):
+			LoggingService.LogError ("ParsedDocument is null!")
+			return
+		unit = Document.ParsedDocument.GetAst of SyntaxTree ()
 		if(unit == null):
+			LoggingService.LogError ("SyntaxTree is null!")
 			return
 			
 		location = TextEditor.Caret.Location
-		type = unit.GetTypeAt(location.Line, location.Column)
+		type = GetTypeAt (unit, location)
 		result = System.Collections.Generic.List of PathEntry()
 		ambience = GetAmbience()
-		member = null
-		node = unit as INode
+		member = null as EntityDeclaration
+		node = unit as AstNode
 		
-		if(type != null and type.ClassType != ClassType.Delegate):
-			member = type.GetMemberAt(location.Line, location.Column)
+		if type != null:
+			member = GetMemberAt (type, location)
 			
-		if(member != null):
+		if member != null:
 			node = member
 		elif(type != null):
 			node = type
 			
 		while(node != null):
-			entry as PathEntry
-			if(node isa ICompilationUnit):
-				if(not Document.ParsedDocument.UserRegions.Any()):
-					break
-				region = Document.ParsedDocument.UserRegions.Where({r as FoldingRegion| r.Region.Contains(location.Line, location.Column) }).LastOrDefault()
-				if(region == null):
-					entry = PathEntry(GettextCatalog.GetString("No region"))
-				else:
-					entry = PathEntry(CompilationUnitDataProvider.Pixbuf, region.Name)
-				entry.Position = EntryPosition.Right
-			else:
-				entry = PathEntry(ImageService.GetPixbuf((node as MonoDevelop.Projects.Dom.IMember).StockIcon, Gtk.IconSize.Menu), ambience.GetString((node as MonoDevelop.Projects.Dom.IMember), OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates))
-			entry.Tag = node
-			result.Insert(0, entry)
+			if (not node isa SyntaxTree):
+				result.Insert(0, PathEntry(DataProvider.GetIconForNode (node), DataProvider.GetName (node), Tag: node.Parent))
 			node = node.Parent
 			
 		noSelection as PathEntry = null
 		if(type == null):
 			noSelection = PathEntry(GettextCatalog.GetString("No selection"))
-			noSelection.Tag = CustomNode(Document.CompilationUnit)
-		elif(member == null and type.ClassType != ClassType.Delegate):
+			noSelection.Tag = unit
+		elif(member == null):
 			noSelection = PathEntry(GettextCatalog.GetString("No selection"))
-			noSelection.Tag = CustomNode(type)
+			noSelection.Tag = type;
 			
 		if(noSelection != null):
 			result.Add(noSelection)
@@ -368,7 +413,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		
 		return _index.TargetOf (Document.FileName.FullPath, Editor.Text, Editor.Caret.Line, column)
 		
-	[CommandUpdateHandler(MonoDevelop.Refactoring.RefactoryCommands.GotoDeclaration)]
+	#[CommandUpdateHandler(MonoDevelop.Refactoring.RefactoryCommands.GotoDeclaration)]
 	def CanGotoDeclaration (item as CommandInfo):
 		location = null as TokenLocation
 		try:
@@ -384,7 +429,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			if not string.IsNullOrEmpty (displayText):
 				item.Text = string.Format (gotoBase, displayText)
 		
-	[CommandHandler(MonoDevelop.Refactoring.RefactoryCommands.GotoDeclaration)]
+	#[CommandHandler(MonoDevelop.Refactoring.RefactoryCommands.GotoDeclaration)]
 	def GotoDeclaration ():
 		location = null as TokenLocation
 		try:
@@ -400,21 +445,22 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			declaringType = location.MemberInfo.DeclaringType
 			if (declaringType.IsGenericType):
 				declaringType = declaringType.GetGenericTypeDefinition ()
-			type = _dom.GetType (declaringType.FullName, 0, true, true) as MonoDevelop.Projects.Dom.IType
+			# type = _dom.GetType (declaringType.FullName, 0, true, true)
+			type = null
 			if (type != null):
-				member = type.Members.FirstOrDefault ({ m | MembersAreEqual (location.MemberInfo, m) })
+				member = (type as TypeDeclaration).Members.FirstOrDefault ({ m | MembersAreEqual (location.MemberInfo, m) })
 				if not (member is null):
 					# Console.WriteLine ("Jumping to {0}", member.FullName)
 					IdeApp.ProjectOperations.JumpToDeclaration (member)
 			# else: Console.WriteLine ("Null type lookup for {0}", declaringType.FullName)
-		elif (location.TypeName != null):
+		# elif (location.TypeName != null):
 			# Console.WriteLine ("Jumping to {0}", location.TypeName)
-			IdeApp.ProjectOperations.JumpToDeclaration (_dom.GetType (location.TypeName, 0, true, true) as MonoDevelop.Projects.Dom.IType)
+			# IdeApp.ProjectOperations.JumpToDeclaration (_dom.GetType (location.TypeName, 0, true, true))
 		else:
 			# Console.WriteLine ("Jumping to {0}", location.Name)
 			IdeApp.Workbench.OpenDocument (location.File, location.Line, location.Column, OpenDocumentOptions.HighlightCaretLine)
 			
-	static def MembersAreEqual(memberInfo as MemberInfo, imember as MonoDevelop.Projects.Dom.IMember):
+	static def MembersAreEqual(memberInfo as MemberInfo, imember as ICSharpCode.NRefactory.TypeSystem.IMember):
 		# Console.WriteLine ("Checking {0}", imember.FullName)
 		if not (memberInfo.Name.Equals (imember.Name, StringComparison.Ordinal) or \
 		(memberInfo.Name.Equals (".ctor", StringComparison.Ordinal) and imember.Name.Equals ("constructor", StringComparison.Ordinal))):
@@ -422,11 +468,11 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 			return false
 		
 		if (memberInfo isa MethodBase):
-			if not imember isa MonoDevelop.Projects.Dom.IMethod:
+			if not imember isa ICSharpCode.NRefactory.TypeSystem.IMethod:
 				# Console.WriteLine ("IMember is not IMethod")
 				return false
 			methodbase = memberInfo as MethodBase
-			imethod = imember as MonoDevelop.Projects.Dom.IMethod
+			imethod = imember as ICSharpCode.NRefactory.TypeSystem.IMethod
 			mbparams = methodbase.GetParameters()
 			imparams = imethod.Parameters
 			
@@ -435,16 +481,16 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 				# Console.WriteLine ("Comparing {0}({2}) to {1}", imparams[i].ReturnType.FullName, mbparams[i].ParameterType.FullName, imparams[i].ReturnType.GetType ())
 				
 				# Check imparams for generic
-				if (imparams[i].ReturnType isa DomReturnType and \
-				(imparams[i].ReturnType as DomReturnType).GenericArguments.Count > 0):
-					return false 
+				# if (imparams[i].ReturnType isa DomReturnType and \
+				# (imparams[i].ReturnType as DomReturnType).GenericArguments.Count > 0):
+				# 	return false 
 					
 				# Check mbparams for generic
 				if (mbparams[i].ParameterType.IsGenericParameter):
 					return false
 					
 				# Compare names
-				if (imparams[i].ReturnType.FullName.Equals (mbparams[i].ParameterType.FullName)):
+				if (imparams[i].Type.FullName.Equals (mbparams[i].ParameterType.FullName)):
 					return false
 			if found:
 				# Console.WriteLine ("Parameter mismatch")
@@ -452,38 +498,34 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocu
 		return true
 		
 
-class CustomNode(AbstractNode):
-	def constructor(parent as INode):
-		Parent = parent
-
-def IconForEntity(member as IEntity) as MonoDevelop.Core.IconId:
+def IconForEntity(member as Boo.Lang.Compiler.TypeSystem.IEntity) as MonoDevelop.Core.IconId:
 	match member.EntityType:
-		case EntityType.BuiltinFunction:
-			return Stock.Method
-		case EntityType.Constructor:
-			return Stock.Method
-		case EntityType.Method:
-			return Stock.Method
-		case EntityType.Local:
-			return Stock.Field
-		case EntityType.Field:
-			return Stock.Field
-		case EntityType.Property:
-			return Stock.Property
-		case EntityType.Event:
-			return Stock.Event
-		case EntityType.Type:
+		case Boo.Lang.Compiler.TypeSystem.EntityType.BuiltinFunction:
+			return MonoDevelop.Ide.Gui.Stock.Method
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Constructor:
+			return MonoDevelop.Ide.Gui.Stock.Method
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Method:
+			return MonoDevelop.Ide.Gui.Stock.Method
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Local:
+			return MonoDevelop.Ide.Gui.Stock.Field
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Field:
+			return MonoDevelop.Ide.Gui.Stock.Field
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Property:
+			return MonoDevelop.Ide.Gui.Stock.Property
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Event:
+			return MonoDevelop.Ide.Gui.Stock.Event
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Type:
 			type as Boo.Lang.Compiler.TypeSystem.IType = member
-			if type.IsEnum: return Stock.Enum
-			if type.IsInterface: return Stock.Interface
-			if type.IsValueType: return Stock.Struct
-			return Stock.Class
-		case EntityType.Namespace:
-			return Stock.NameSpace
-		case EntityType.Ambiguous:
+			if type.IsEnum: return MonoDevelop.Ide.Gui.Stock.Enum
+			if type.IsInterface: return MonoDevelop.Ide.Gui.Stock.Interface
+			if type.IsValueType: return MonoDevelop.Ide.Gui.Stock.Struct
+			return MonoDevelop.Ide.Gui.Stock.Class
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Namespace:
+			return MonoDevelop.Ide.Gui.Stock.NameSpace
+		case Boo.Lang.Compiler.TypeSystem.EntityType.Ambiguous:
 			ambiguous as Ambiguous = member
 			return IconForEntity(ambiguous.Entities[0])
 		otherwise:
-			return Stock.Literal
+			return MonoDevelop.Ide.Gui.Stock.Literal
 
 	

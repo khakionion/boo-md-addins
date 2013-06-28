@@ -3,7 +3,6 @@ namespace Boo.MonoDevelop.Completion
 import System
 import Boo.Lang.PatternMatching
 
-import MonoDevelop.Projects.Dom
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.CodeCompletion
 
@@ -121,9 +120,9 @@ class BooEditorCompletion(BooCompletionTextEditorExtension):
 	override Primitives:
 		get: return PRIMITIVES
 		
-	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char):
-		triggerWordLength = 0
-		return HandleCodeCompletion(context, completionChar, triggerWordLength)
+#	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char):
+#		triggerWordLength = 0
+#		return HandleCodeCompletion(context, completionChar, triggerWordLength)
 		
 	override def HandleCodeCompletion(context as CodeCompletionContext, completionChar as char, ref triggerWordLength as int):
 #		print "HandleCodeCompletion(${context.ToString()}, ${completionChar.ToString()})"
@@ -164,18 +163,15 @@ class BooEditorCompletion(BooCompletionTextEditorExtension):
 		return null
 				
 	def CompleteNamespacePatterns(context as CodeCompletionContext):
-		types = (MemberType.Namespace, MemberType.Type)
 		for pattern in NAMESPACE_PATTERNS:
-			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
+			completions = CompleteNamespacesForPattern(context, pattern, "namespace")
 			return completions if completions is not null
 			
 		return null
 		
 	def CompleteTypePatterns(context as CodeCompletionContext):
-		types = (MemberType.Namespace, MemberType.Type)
-		
 		for pattern in TYPE_PATTERNS:
-			completions = CompleteNamespacesForPattern(context, pattern, "namespace", types)
+			completions = CompleteNamespacesForPattern(context, pattern, "namespace")
 			if completions is not null:
 				completions.AddRange(CompletionData(p, Stock.Literal) for p in Primitives)
 				return completions

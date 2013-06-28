@@ -25,10 +25,11 @@
 	</Runtime>
 
 	<Dependencies>
-		<Addin id="Ide" version="2.8"/>
-		<Addin id="Core" version="2.8" />
-		<Addin id="SourceEditor2" version="2.8" />
-		<Addin id="Refactoring" version="2.8" />
+		<Addin id = "Core" version = "4.0.1"/>
+		<Addin id = "Ide" version = "4.0.1"/>
+		<Addin id = "SourceEditor2" version = "4.0.1" />
+		<Addin id = "DesignerSupport" version = "4.0.1" />
+		<Addin id = "Refactoring" version = "4.0.1" />	
 	</Dependencies>
 	
 	<Extension path="/MonoDevelop/Core/SupportPackages">
@@ -100,9 +101,8 @@
 		<Class fileExtensions = ".boo" class = "Boo.MonoDevelop.Editing.BooEditorIndentation" />
 	</Extension>
 	
-	<Extension path = "/MonoDevelop/ProjectModel/DomParser">
-		<Parser id = "BooParser"
-			fileExtensions=".boo"
+	<Extension path = "/MonoDevelop/TypeSystem/Parser">
+		<Parser mimeType = "text/x-boo"
 			class = "Boo.MonoDevelop.ProjectModel.BooParser" />
 	</Extension>
 	

@@ -33,8 +33,14 @@ class BooLanguageBinding(BooIdeLanguageBinding, IDotNetLanguageBinding):
 	static def IsBooFile(fileName as string):
 		return fileName.ToLower().EndsWith(".boo")
 	
+	def IsSourceCodeFile(fileName as FilePath):
+		return IsBooFile(fileName)
+		
 	def IsSourceCodeFile(fileName as string):
 		return IsBooFile(fileName)
+		
+	def GetFileName(baseName as FilePath):
+		return baseName + ".boo"
 		
 	def GetFileName(baseName as string):
 		return baseName + ".boo"

@@ -8,51 +8,54 @@
     <ProjectGuid>{A154F6EB-6808-4816-B9C1-C5412663E0F1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Boo.MonoDevelop</RootNamespace>
-    <UsePartialTypes>false</UsePartialTypes>
+    <UsePartialTypes>False</UsePartialTypes>
     <AssemblyName>Boo.MonoDevelop</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <OutputPath>bin\Debug</OutputPath>
     <ErrorReport>prompt</ErrorReport>
-    <ducky>false</ducky>
+    <ducky>False</ducky>
     <culture />
-    <genwarnings>false</genwarnings>
-    <nostdlib>false</nostdlib>
+    <genwarnings>False</genwarnings>
+    <nostdlib>False</nostdlib>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
-    <ducky>false</ducky>
+    <ducky>False</ducky>
     <culture />
-    <genwarnings>false</genwarnings>
-    <nostdlib>false</nostdlib>
+    <genwarnings>False</genwarnings>
+    <nostdlib>False</nostdlib>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="MonoDevelop.DesignerSupport, Version=2.6.0.0, Culture=neutral">
-      <Package>monodevelop-core-addins</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.Ide, Version=2.6.0.0, Culture=neutral">
-      <Package>monodevelop</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.SourceEditor2, Version=2.6.0.0, Culture=neutral">
-      <Package>monodevelop-core-addins</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.Core, Version=2.6.0.0, Culture=neutral">
-      <Package>monodevelop</Package>
-    </Reference>
-    <Reference Include="MonoDevelop.Debugger, Version=2.6.0.0, Culture=neutral">
-      <Package>monodevelop-core-addins</Package>
-    </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="Mono.Debugging, Version=0.0.0.0, Culture=neutral, PublicKeyToken=5e9ce85b0923c84f">
-      <Package>monodevelop</Package>
-    </Reference>
     <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="Mono.Debugging">
+      <HintPath>..\..\..\monodevelop\main\build\bin\Mono.Debugging.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoDevelop.Core">
+      <HintPath>..\..\..\monodevelop\main\build\bin\MonoDevelop.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoDevelop.Ide">
+      <HintPath>..\..\..\monodevelop\main\build\bin\MonoDevelop.Ide.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoDevelop.Debugger">
+      <HintPath>..\..\..\monodevelop\main\build\AddIns\MonoDevelop.Debugger\MonoDevelop.Debugger.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoDevelop.DesignerSupport">
+      <HintPath>..\..\..\monodevelop\main\build\AddIns\MonoDevelop.DesignerSupport\MonoDevelop.DesignerSupport.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoDevelop.SourceEditor2">
+      <HintPath>..\..\..\monodevelop\main\build\AddIns\MonoDevelop.SourceEditor2.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.TextEditor">
+      <HintPath>..\..\..\monodevelop\main\build\bin\Mono.TextEditor.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
@@ -127,7 +130,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Refactoring\" />
-    <Folder Include="Completion\" />
     <Folder Include="Completion\" />
     <Folder Include="Editor\" />
     <Folder Include="ProjectModel\GUI\" />
