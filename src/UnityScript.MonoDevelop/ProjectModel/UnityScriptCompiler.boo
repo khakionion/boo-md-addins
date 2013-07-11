@@ -102,6 +102,9 @@ class UnityScriptCompiler:
 		using process = Runtime.SystemAssemblyService.CurrentRuntime.ExecuteAssembly(startInfo, _config.TargetFramework):
 			return process.StandardOutput.ReadToEnd() + System.Environment.NewLine + process.StandardError.ReadToEnd()
 			
+	private static def IsWarningCode (code as string):
+		return (not string.IsNullOrEmpty (code)) and code.StartsWith ("BCW")
+			
 	private def ParseBuildResult(stdout as string):
 		
 		result = BuildResult()
@@ -113,7 +116,7 @@ class UnityScriptCompiler:
 								FileName: fileName[0].Value,
 								Line: int.Parse(lineNumber[0].Value),
 								Column: int.Parse(column[0].Value),
-								IsWarning: code[0].Value.StartsWith("BCW"),
+								IsWarning: IsWarningCode (code[0].Value),
 								ErrorNumber: code[0].Value,
 								ErrorText: message[0].Value))
 					
@@ -121,7 +124,8 @@ class UnityScriptCompiler:
 					result.Append(
 						BuildError(
 								ErrorNumber: code[0].Value,
-								ErrorText: message[0].Value))
+								ErrorText: message[0].Value,
+								IsWarning: IsWarningCode (code[0].Value)))
 					
 				otherwise:			
 					unrecognized = len(line) > 0 \
