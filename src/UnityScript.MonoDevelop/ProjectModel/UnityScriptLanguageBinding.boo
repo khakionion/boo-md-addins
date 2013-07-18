@@ -44,7 +44,7 @@ class UnityScriptLanguageBinding(BooIdeLanguageBinding, IDotNetLanguageBinding):
 		return baseName + ".js"
 		
 	def GetCodeDomProvider():
-		return UnityScriptCodeDomProvider()
+		return null
 		
 	def CreateProjectParameters(projectOptions as XmlElement):
 		return UnityScriptProjectParameters()
